@@ -1,7 +1,21 @@
 import pygame
 import sys
+import os
 from constants import *
 from snake_logic import Snake, Food
+
+def load_high_score():
+    if os.path.exists("highscore.txt"):
+        with open("highscore.txt", "r") as f:
+            try:
+                return int(f.read())
+            except ValueError:
+                return 0
+    return 0
+
+def save_high_score(score):
+    with open("highscore.txt", "w") as f:
+        f.write(str(score))
 
 def main():
     # Initialize Pygame
@@ -10,13 +24,16 @@ def main():
     pygame.display.set_caption("Snake Game")
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("Arial", 24)
+    large_font = pygame.font.SysFont("Arial", 48)
 
     # Initialize game objects
     snake = Snake()
     food = Food(snake.body)
     score = 0
+    high_score = load_high_score()
     fps = INITIAL_FPS
     game_over = False
+    high_score_saved = False
 
     while True:
         # 1. Event Handling
@@ -41,8 +58,10 @@ def main():
                         snake = Snake()
                         food = Food(snake.body)
                         score = 0
+                        high_score = load_high_score()
                         fps = INITIAL_FPS
                         game_over = False
+                        high_score_saved = False
 
         # 2. Update Logic
         if not game_over:
@@ -60,6 +79,12 @@ def main():
                 # Dynamic difficulty
                 if score % DIFFICULTY_STEP == 0:
                     fps += SPEED_INCREMENT
+        
+        elif not high_score_saved:
+            if score > high_score:
+                save_high_score(score)
+                high_score = score
+            high_score_saved = True
 
         # 3. Rendering
         screen.fill(COLOR_BACKGROUND)
@@ -80,14 +105,26 @@ def main():
             # Add a small border to segments
             pygame.draw.rect(screen, COLOR_BACKGROUND, seg_rect, 1)
 
-        # Draw score
+        # Draw UI
         score_surface = font.render(f"Score: {score}", True, COLOR_TEXT)
+        high_score_surface = font.render(f"High Score: {high_score}", True, COLOR_TEXT)
         screen.blit(score_surface, (10, 10))
+        screen.blit(high_score_surface, (SCREEN_WIDTH - high_score_surface.get_width() - 10, 10))
 
         if game_over:
-            over_surface = font.render("GAME OVER - Press R to Restart", True, COLOR_TEXT)
-            over_rect = over_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+            # Semi-transparent overlay
+            overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 150))
+            screen.blit(overlay, (0, 0))
+
+            over_surface = large_font.render("GAME OVER", True, COLOR_FOOD)
+            restart_surface = font.render("Press R to Restart", True, COLOR_TEXT)
+            
+            over_rect = over_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20))
+            restart_rect = restart_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 40))
+            
             screen.blit(over_surface, over_rect)
+            screen.blit(restart_surface, restart_rect)
 
         pygame.display.flip()
         clock.tick(fps)
