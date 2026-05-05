@@ -49,8 +49,10 @@ STATE_PLAYING = "PLAYING"
 STATE_GAME_OVER = "GAME_OVER"
 
 def main():
-    # Initialize Pygame
-    pygame.init()
+    # Initialize Pygame modules selectively to avoid audio/ALSA errors
+    pygame.display.init()
+    pygame.font.init()
+    
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Snake Game")
     clock = pygame.time.Clock()
