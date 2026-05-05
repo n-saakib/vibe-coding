@@ -51,13 +51,22 @@ class Snake:
         return False
 
 class Food:
-    def __init__(self, snake_body):
+    def __init__(self, snake_body, other_food_pos=None):
         self.position = (0, 0)
-        self.spawn(snake_body)
+        self.spawn(snake_body, other_food_pos)
 
-    def spawn(self, snake_body):
+    def spawn(self, snake_body, other_food_pos=None):
         while True:
             self.position = (random.randint(0, GRID_WIDTH - 1), 
                              random.randint(0, GRID_HEIGHT - 1))
-            if self.position not in snake_body:
+            if self.position not in snake_body and self.position != other_food_pos:
                 break
+
+class BonusFood(Food):
+    def __init__(self, snake_body, other_food_pos=None):
+        super().__init__(snake_body, other_food_pos)
+        self.active = False
+
+    def spawn(self, snake_body, other_food_pos=None):
+        super().spawn(snake_body, other_food_pos)
+        self.active = True

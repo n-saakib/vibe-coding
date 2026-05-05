@@ -21,6 +21,7 @@ COLOR_TEXT = (255, 255, 255)
 INITIAL_FPS = 10
 SPEED_INCREMENT = 0.5
 SCORE_PER_FOOD = 10
+BONUS_SCORE_MULTIPLIER = 5
 DIFFICULTY_STEP = 50 # Increase speed every 50 points
 
 # Game Modes
@@ -32,29 +33,35 @@ DIFFICULTY_LEVELS = {
     "Base": {
         "start_fps": 7,
         "growth_rate": 1,
-        "speed_inc": 0.2
+        "speed_inc": 0.2,
+        "bonus_threshold": 50
     },
     "Pro": {
         "start_fps": 10,
         "growth_rate": 1,
-        "speed_inc": 0.5
+        "speed_inc": 0.5,
+        "bonus_threshold": 80
     },
     "Pro Max": {
         "start_fps": 15,
         "growth_rate": 2,
-        "speed_inc": 0.8
+        "speed_inc": 0.8,
+        "bonus_threshold": 120
     },
     "Ultra Pro Max": {
         "start_fps": 20,
         "growth_rate": 3,
-        "speed_inc": 1.2
+        "speed_inc": 1.2,
+        "bonus_threshold": 200
     },
     "Ultra Pro Max +": {
         "start_fps": 25,
         "growth_rate": 5,
-        "speed_inc": 2.0
+        "speed_inc": 2.0,
+        "bonus_threshold": 300
     }
 }
 
 COLOR_BUTTON = (50, 50, 50)
 COLOR_BUTTON_HOVER = (70, 70, 70)
+COLOR_BONUS_FOOD = (255, 215, 0) # Gold

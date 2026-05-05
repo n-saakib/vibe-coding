@@ -68,7 +68,9 @@ def main():
     # Initialize game objects
     snake = None
     food = None
+    bonus_food = None
     score = 0
+    score_since_last_bonus = 0
     high_score = load_high_score()
     fps = INITIAL_FPS
     high_score_saved = False
@@ -148,7 +150,10 @@ def main():
                 # Initialize Game
                 snake = Snake()
                 food = Food(snake.body)
+                bonus_food = BonusFood(snake.body)
+                bonus_food.active = False
                 score = 0
+                score_since_last_bonus = 0
                 high_score = load_high_score()
                 level_config = DIFFICULTY_LEVELS[selected_level]
                 fps = level_config["start_fps"]
@@ -165,14 +170,28 @@ def main():
                 current_state = STATE_GAME_OVER
             
             # Check food consumption
+            level_config = DIFFICULTY_LEVELS[selected_level]
             if snake.body[0] == food.position:
-                level_config = DIFFICULTY_LEVELS[selected_level]
                 snake.grow(amount=level_config["growth_rate"])
-                food.spawn(snake.body)
+                food.spawn(snake.body, bonus_food.position if bonus_food.active else None)
                 score += SCORE_PER_FOOD
+                score_since_last_bonus += SCORE_PER_FOOD
+                
                 # Dynamic difficulty
                 if score % DIFFICULTY_STEP == 0:
                     fps += level_config["speed_inc"]
+
+            # Check bonus food consumption
+            if bonus_food.active and snake.body[0] == bonus_food.position:
+                snake.grow(amount=level_config["growth_rate"] * 2) # Extra growth for bonus
+                bonus_food.active = False
+                score += SCORE_PER_FOOD * BONUS_SCORE_MULTIPLIER
+                # Speed boost from bonus? Maybe too much. Let's stick to points and growth.
+
+            # Spawn bonus food
+            if not bonus_food.active and score_since_last_bonus >= level_config["bonus_threshold"]:
+                bonus_food.spawn(snake.body, food.position)
+                score_since_last_bonus = 0
         
         elif current_state == STATE_PAUSED:
             for btn in pause_buttons:
@@ -223,6 +242,16 @@ def main():
                                     food.position[1] * GRID_SIZE + UI_HEIGHT, 
                                     GRID_SIZE, GRID_SIZE)
             pygame.draw.rect(screen, COLOR_FOOD, food_rect)
+
+            # Draw bonus food
+            if bonus_food.active:
+                # Bonus food is 2x2 grid size (centered on its grid position)
+                bonus_rect = pygame.Rect(bonus_food.position[0] * GRID_SIZE - GRID_SIZE // 2, 
+                                         bonus_food.position[1] * GRID_SIZE + UI_HEIGHT - GRID_SIZE // 2, 
+                                         GRID_SIZE * 2, GRID_SIZE * 2)
+                pygame.draw.rect(screen, COLOR_BONUS_FOOD, bonus_rect, border_radius=5)
+                # Add a pulsing effect or glow? Simple border for now.
+                pygame.draw.rect(screen, COLOR_TEXT, bonus_rect, 1, border_radius=5)
             
             # Draw snake
             for i, segment in enumerate(snake.body):
