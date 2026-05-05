@@ -53,7 +53,7 @@ def main():
     pygame.display.init()
     pygame.font.init()
     
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT + UI_HEIGHT))
     pygame.display.set_caption("Snake Game")
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("Arial", 24)
@@ -73,16 +73,20 @@ def main():
     high_score_saved = False
 
     # UI Elements
+    btn_width = 300
+    center_x = SCREEN_WIDTH // 2 - btn_width // 2
+    
     mode_buttons = [
-        Button(200, 200, 200, 50, MODE_WALL_COLLISION, font),
-        Button(200, 270, 200, 50, MODE_WRAP_AROUND, font)
+        Button(center_x, 200, btn_width, 50, MODE_WALL_COLLISION, font),
+        Button(center_x, 270, btn_width, 50, MODE_WRAP_AROUND, font)
     ]
     
     level_buttons = []
     for i, level_name in enumerate(DIFFICULTY_LEVELS.keys()):
-        level_buttons.append(Button(200, 150 + i * 60, 200, 50, level_name, font))
+        level_buttons.append(Button(center_x, 150 + i * 60, btn_width, 50, level_name, font))
     
-    start_button = Button(200, 300, 200, 60, "START GAME", large_font)
+    start_btn_width = 400
+    start_button = Button(SCREEN_WIDTH // 2 - start_btn_width // 2, 350, start_btn_width, 80, "START GAME", large_font)
 
     while True:
         mouse_pos = pygame.mouse.get_pos()
@@ -189,9 +193,13 @@ def main():
             start_button.draw(screen)
 
         elif current_state == STATE_PLAYING or current_state == STATE_GAME_OVER:
+            # Draw Header Background
+            pygame.draw.rect(screen, (50, 50, 50), (0, 0, SCREEN_WIDTH, UI_HEIGHT))
+            pygame.draw.line(screen, COLOR_TEXT, (0, UI_HEIGHT), (SCREEN_WIDTH, UI_HEIGHT), 2)
+
             # Draw food
             food_rect = pygame.Rect(food.position[0] * GRID_SIZE, 
-                                    food.position[1] * GRID_SIZE, 
+                                    food.position[1] * GRID_SIZE + UI_HEIGHT, 
                                     GRID_SIZE, GRID_SIZE)
             pygame.draw.rect(screen, COLOR_FOOD, food_rect)
             
@@ -199,7 +207,7 @@ def main():
             for i, segment in enumerate(snake.body):
                 color = COLOR_SNAKE_HEAD if i == 0 else COLOR_SNAKE_BODY
                 seg_rect = pygame.Rect(segment[0] * GRID_SIZE, 
-                                       segment[1] * GRID_SIZE, 
+                                       segment[1] * GRID_SIZE + UI_HEIGHT, 
                                        GRID_SIZE, GRID_SIZE)
                 pygame.draw.rect(screen, color, seg_rect)
                 pygame.draw.rect(screen, COLOR_BACKGROUND, seg_rect, 1)
@@ -208,12 +216,12 @@ def main():
             score_surface = font.render(f"Score: {score}", True, COLOR_TEXT)
             high_score_surface = font.render(f"High Score: {high_score}", True, COLOR_TEXT)
             level_surface = font.render(f"Level: {selected_level}", True, COLOR_TEXT)
-            screen.blit(score_surface, (10, 10))
-            screen.blit(high_score_surface, (SCREEN_WIDTH - high_score_surface.get_width() - 10, 10))
-            screen.blit(level_surface, (SCREEN_WIDTH // 2 - level_surface.get_width() // 2, 10))
+            screen.blit(score_surface, (10, UI_HEIGHT // 2 - score_surface.get_height() // 2))
+            screen.blit(high_score_surface, (SCREEN_WIDTH - high_score_surface.get_width() - 10, UI_HEIGHT // 2 - high_score_surface.get_height() // 2))
+            screen.blit(level_surface, (SCREEN_WIDTH // 2 - level_surface.get_width() // 2, UI_HEIGHT // 2 - level_surface.get_height() // 2))
 
             if current_state == STATE_GAME_OVER:
-                overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+                overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT + UI_HEIGHT), pygame.SRCALPHA)
                 overlay.fill((0, 0, 0, 150))
                 screen.blit(overlay, (0, 0))
 
@@ -221,9 +229,10 @@ def main():
                 restart_surface = font.render("Press R to Restart", True, COLOR_TEXT)
                 final_score_surface = font.render(f"Final Score: {score}", True, COLOR_TEXT)
                 
-                over_rect = over_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 40))
-                final_rect = final_score_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 10))
-                restart_rect = restart_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 60))
+                mid_y = (SCREEN_HEIGHT + UI_HEIGHT) // 2
+                over_rect = over_surface.get_rect(center=(SCREEN_WIDTH // 2, mid_y - 40))
+                final_rect = final_score_surface.get_rect(center=(SCREEN_WIDTH // 2, mid_y + 10))
+                restart_rect = restart_surface.get_rect(center=(SCREEN_WIDTH // 2, mid_y + 60))
                 
                 screen.blit(over_surface, over_rect)
                 screen.blit(final_score_surface, final_rect)

@@ -1,8 +1,9 @@
 # Game Configuration Constants
 
 # Window dimensions
-SCREEN_WIDTH = 600
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 800
+UI_HEIGHT = 60
 
 # Grid settings
 GRID_SIZE = 20
