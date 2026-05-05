@@ -2,7 +2,7 @@ import pygame
 import sys
 import os
 from constants import *
-from snake_logic import Snake, Food
+from snake_logic import Snake, Food, BonusFood
 
 def load_high_score():
     if os.path.exists("highscore.txt"):
