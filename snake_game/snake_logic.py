@@ -9,34 +9,42 @@ class Snake:
                      (GRID_WIDTH // 2 - 2, GRID_HEIGHT // 2)]
         self.direction = (1, 0) # Moving right initially
         self.new_direction = (1, 0)
-        self.grow_pending = False
+        self.growth_pool = 0
 
     def set_direction(self, direction):
         # Prevent reversing into self
         if (direction[0] * -1, direction[1] * -1) != self.direction:
             self.new_direction = direction
 
-    def move(self):
+    def move(self, wrap_around=False):
         self.direction = self.new_direction
         head_x, head_y = self.body[0]
         dir_x, dir_y = self.direction
-        new_head = (head_x + dir_x, head_y + dir_y)
         
+        new_head_x = head_x + dir_x
+        new_head_y = head_y + dir_y
+        
+        if wrap_around:
+            new_head_x %= GRID_WIDTH
+            new_head_y %= GRID_HEIGHT
+            
+        new_head = (new_head_x, new_head_y)
         self.body.insert(0, new_head)
         
-        if not self.grow_pending:
-            self.body.pop()
+        if self.growth_pool > 0:
+            self.growth_pool -= 1
         else:
-            self.grow_pending = False
+            self.body.pop()
 
-    def grow(self):
-        self.grow_pending = True
+    def grow(self, amount=1):
+        self.growth_pool += amount
 
-    def check_collision(self):
+    def check_collision(self, wall_collision=True):
         head = self.body[0]
         # Wall collision
-        if head[0] < 0 or head[0] >= GRID_WIDTH or head[1] < 0 or head[1] >= GRID_HEIGHT:
-            return True
+        if wall_collision:
+            if head[0] < 0 or head[0] >= GRID_WIDTH or head[1] < 0 or head[1] >= GRID_HEIGHT:
+                return True
         # Self collision
         if head in self.body[1:]:
             return True

@@ -17,6 +17,37 @@ def save_high_score(score):
     with open("highscore.txt", "w") as f:
         f.write(str(score))
 
+class Button:
+    def __init__(self, x, y, width, height, text, font, color=COLOR_BUTTON, hover_color=COLOR_BUTTON_HOVER):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.text = text
+        self.font = font
+        self.color = color
+        self.hover_color = hover_color
+        self.is_hovered = False
+
+    def draw(self, screen):
+        color = self.hover_color if self.is_hovered else self.color
+        pygame.draw.rect(screen, color, self.rect, border_radius=5)
+        pygame.draw.rect(screen, COLOR_TEXT, self.rect, 2, border_radius=5)
+        
+        text_surf = self.font.render(self.text, True, COLOR_TEXT)
+        text_rect = text_surf.get_rect(center=self.rect.center)
+        screen.blit(text_surf, text_rect)
+
+    def update(self, mouse_pos):
+        self.is_hovered = self.rect.collidepoint(mouse_pos)
+
+    def is_clicked(self, mouse_pos, mouse_up):
+        return self.is_hovered and mouse_up
+
+# Game States
+STATE_MODE_SELECT = "MODE_SELECT"
+STATE_LEVEL_SELECT = "LEVEL_SELECT"
+STATE_START_SCREEN = "START_SCREEN"
+STATE_PLAYING = "PLAYING"
+STATE_GAME_OVER = "GAME_OVER"
+
 def main():
     # Initialize Pygame
     pygame.init()
@@ -26,24 +57,46 @@ def main():
     font = pygame.font.SysFont("Arial", 24)
     large_font = pygame.font.SysFont("Arial", 48)
 
+    # Game State Variables
+    current_state = STATE_MODE_SELECT
+    selected_mode = None
+    selected_level = None
+    
     # Initialize game objects
-    snake = Snake()
-    food = Food(snake.body)
+    snake = None
+    food = None
     score = 0
     high_score = load_high_score()
     fps = INITIAL_FPS
-    game_over = False
     high_score_saved = False
 
+    # UI Elements
+    mode_buttons = [
+        Button(200, 200, 200, 50, MODE_WALL_COLLISION, font),
+        Button(200, 270, 200, 50, MODE_WRAP_AROUND, font)
+    ]
+    
+    level_buttons = []
+    for i, level_name in enumerate(DIFFICULTY_LEVELS.keys()):
+        level_buttons.append(Button(200, 150 + i * 60, 200, 50, level_name, font))
+    
+    start_button = Button(200, 300, 200, 60, "START GAME", large_font)
+
     while True:
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_up = False
+
         # 1. Event Handling
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             
+            if event.type == pygame.MOUSEBUTTONUP:
+                mouse_up = True
+            
             if event.type == pygame.KEYDOWN:
-                if not game_over:
+                if current_state == STATE_PLAYING:
                     if event.key == pygame.K_UP:
                         snake.set_direction((0, -1))
                     elif event.key == pygame.K_DOWN:
@@ -52,82 +105,130 @@ def main():
                         snake.set_direction((-1, 0))
                     elif event.key == pygame.K_RIGHT:
                         snake.set_direction((1, 0))
-                else:
+                elif current_state == STATE_GAME_OVER:
                     if event.key == pygame.K_r:
-                        # Restart game
-                        snake = Snake()
-                        food = Food(snake.body)
-                        score = 0
-                        high_score = load_high_score()
-                        fps = INITIAL_FPS
-                        game_over = False
+                        current_state = STATE_MODE_SELECT
                         high_score_saved = False
 
         # 2. Update Logic
-        if not game_over:
-            snake.move()
+        if current_state == STATE_MODE_SELECT:
+            for btn in mode_buttons:
+                btn.update(mouse_pos)
+                if btn.is_clicked(mouse_pos, mouse_up):
+                    selected_mode = btn.text
+                    current_state = STATE_LEVEL_SELECT
+        
+        elif current_state == STATE_LEVEL_SELECT:
+            for btn in level_buttons:
+                btn.update(mouse_pos)
+                if btn.is_clicked(mouse_pos, mouse_up):
+                    selected_level = btn.text
+                    current_state = STATE_START_SCREEN
+        
+        elif current_state == STATE_START_SCREEN:
+            start_button.update(mouse_pos)
+            if start_button.is_clicked(mouse_pos, mouse_up):
+                # Initialize Game
+                snake = Snake()
+                food = Food(snake.body)
+                score = 0
+                high_score = load_high_score()
+                level_config = DIFFICULTY_LEVELS[selected_level]
+                fps = level_config["start_fps"]
+                current_state = STATE_PLAYING
+
+        elif current_state == STATE_PLAYING:
+            wrap_around = (selected_mode == MODE_WRAP_AROUND)
+            wall_collision = (selected_mode == MODE_WALL_COLLISION)
+            
+            snake.move(wrap_around=wrap_around)
             
             # Check collision
-            if snake.check_collision():
-                game_over = True
+            if snake.check_collision(wall_collision=wall_collision):
+                current_state = STATE_GAME_OVER
             
             # Check food consumption
             if snake.body[0] == food.position:
-                snake.grow()
+                level_config = DIFFICULTY_LEVELS[selected_level]
+                snake.grow(amount=level_config["growth_rate"])
                 food.spawn(snake.body)
                 score += SCORE_PER_FOOD
                 # Dynamic difficulty
                 if score % DIFFICULTY_STEP == 0:
-                    fps += SPEED_INCREMENT
+                    fps += level_config["speed_inc"]
         
-        elif not high_score_saved:
-            if score > high_score:
-                save_high_score(score)
-                high_score = score
-            high_score_saved = True
+        elif current_state == STATE_GAME_OVER:
+            if not high_score_saved:
+                if score > high_score:
+                    save_high_score(score)
+                    high_score = score
+                high_score_saved = True
 
         # 3. Rendering
         screen.fill(COLOR_BACKGROUND)
         
-        # Draw food
-        food_rect = pygame.Rect(food.position[0] * GRID_SIZE, 
-                                food.position[1] * GRID_SIZE, 
-                                GRID_SIZE, GRID_SIZE)
-        pygame.draw.rect(screen, COLOR_FOOD, food_rect)
-        
-        # Draw snake
-        for i, segment in enumerate(snake.body):
-            color = COLOR_SNAKE_HEAD if i == 0 else COLOR_SNAKE_BODY
-            seg_rect = pygame.Rect(segment[0] * GRID_SIZE, 
-                                   segment[1] * GRID_SIZE, 
-                                   GRID_SIZE, GRID_SIZE)
-            pygame.draw.rect(screen, color, seg_rect)
-            # Add a small border to segments
-            pygame.draw.rect(screen, COLOR_BACKGROUND, seg_rect, 1)
+        if current_state == STATE_MODE_SELECT:
+            title = large_font.render("Select Game Mode", True, COLOR_TEXT)
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
+            for btn in mode_buttons:
+                btn.draw(screen)
 
-        # Draw UI
-        score_surface = font.render(f"Score: {score}", True, COLOR_TEXT)
-        high_score_surface = font.render(f"High Score: {high_score}", True, COLOR_TEXT)
-        screen.blit(score_surface, (10, 10))
-        screen.blit(high_score_surface, (SCREEN_WIDTH - high_score_surface.get_width() - 10, 10))
+        elif current_state == STATE_LEVEL_SELECT:
+            title = large_font.render("Select Difficulty", True, COLOR_TEXT)
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 50))
+            for btn in level_buttons:
+                btn.draw(screen)
 
-        if game_over:
-            # Semi-transparent overlay
-            overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-            overlay.fill((0, 0, 0, 150))
-            screen.blit(overlay, (0, 0))
+        elif current_state == STATE_START_SCREEN:
+            title = large_font.render("Ready?", True, COLOR_TEXT)
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 150))
+            info = font.render(f"Mode: {selected_mode} | Level: {selected_level}", True, COLOR_SNAKE_HEAD)
+            screen.blit(info, (SCREEN_WIDTH // 2 - info.get_width() // 2, 220))
+            start_button.draw(screen)
 
-            over_surface = large_font.render("GAME OVER", True, COLOR_FOOD)
-            restart_surface = font.render("Press R to Restart", True, COLOR_TEXT)
+        elif current_state == STATE_PLAYING or current_state == STATE_GAME_OVER:
+            # Draw food
+            food_rect = pygame.Rect(food.position[0] * GRID_SIZE, 
+                                    food.position[1] * GRID_SIZE, 
+                                    GRID_SIZE, GRID_SIZE)
+            pygame.draw.rect(screen, COLOR_FOOD, food_rect)
             
-            over_rect = over_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20))
-            restart_rect = restart_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 40))
-            
-            screen.blit(over_surface, over_rect)
-            screen.blit(restart_surface, restart_rect)
+            # Draw snake
+            for i, segment in enumerate(snake.body):
+                color = COLOR_SNAKE_HEAD if i == 0 else COLOR_SNAKE_BODY
+                seg_rect = pygame.Rect(segment[0] * GRID_SIZE, 
+                                       segment[1] * GRID_SIZE, 
+                                       GRID_SIZE, GRID_SIZE)
+                pygame.draw.rect(screen, color, seg_rect)
+                pygame.draw.rect(screen, COLOR_BACKGROUND, seg_rect, 1)
+
+            # Draw UI
+            score_surface = font.render(f"Score: {score}", True, COLOR_TEXT)
+            high_score_surface = font.render(f"High Score: {high_score}", True, COLOR_TEXT)
+            level_surface = font.render(f"Level: {selected_level}", True, COLOR_TEXT)
+            screen.blit(score_surface, (10, 10))
+            screen.blit(high_score_surface, (SCREEN_WIDTH - high_score_surface.get_width() - 10, 10))
+            screen.blit(level_surface, (SCREEN_WIDTH // 2 - level_surface.get_width() // 2, 10))
+
+            if current_state == STATE_GAME_OVER:
+                overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+                overlay.fill((0, 0, 0, 150))
+                screen.blit(overlay, (0, 0))
+
+                over_surface = large_font.render("GAME OVER", True, COLOR_FOOD)
+                restart_surface = font.render("Press R to Restart", True, COLOR_TEXT)
+                final_score_surface = font.render(f"Final Score: {score}", True, COLOR_TEXT)
+                
+                over_rect = over_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 40))
+                final_rect = final_score_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 10))
+                restart_rect = restart_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 60))
+                
+                screen.blit(over_surface, over_rect)
+                screen.blit(final_score_surface, final_rect)
+                screen.blit(restart_surface, restart_rect)
 
         pygame.display.flip()
-        clock.tick(fps)
+        clock.tick(fps if current_state == STATE_PLAYING else 60)
 
 if __name__ == "__main__":
     main()

@@ -21,3 +21,39 @@ INITIAL_FPS = 10
 SPEED_INCREMENT = 0.5
 SCORE_PER_FOOD = 10
 DIFFICULTY_STEP = 50 # Increase speed every 50 points
+
+# Game Modes
+MODE_WALL_COLLISION = "Standard"
+MODE_WRAP_AROUND = "Wrap Around"
+
+# Difficulty Levels
+DIFFICULTY_LEVELS = {
+    "Base": {
+        "start_fps": 7,
+        "growth_rate": 1,
+        "speed_inc": 0.2
+    },
+    "Pro": {
+        "start_fps": 10,
+        "growth_rate": 1,
+        "speed_inc": 0.5
+    },
+    "Pro Max": {
+        "start_fps": 15,
+        "growth_rate": 2,
+        "speed_inc": 0.8
+    },
+    "Ultra Pro Max": {
+        "start_fps": 20,
+        "growth_rate": 3,
+        "speed_inc": 1.2
+    },
+    "Ultra Pro Max +": {
+        "start_fps": 25,
+        "growth_rate": 5,
+        "speed_inc": 2.0
+    }
+}
+
+COLOR_BUTTON = (50, 50, 50)
+COLOR_BUTTON_HOVER = (70, 70, 70)
