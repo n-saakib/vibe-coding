@@ -169,6 +169,12 @@ def main():
             if snake.check_collision(wall_collision=wall_collision):
                 current_state = STATE_GAME_OVER
             
+            # Update timers
+            if bonus_food.active:
+                bonus_food.timer -= 1/fps
+                if bonus_food.timer <= 0:
+                    bonus_food.active = False
+            
             # Check food consumption
             level_config = DIFFICULTY_LEVELS[selected_level]
             if snake.body[0] == food.position:
@@ -181,16 +187,16 @@ def main():
                 if score % DIFFICULTY_STEP == 0:
                     fps += level_config["speed_inc"]
 
-            # Check bonus food consumption
-            if bonus_food.active and snake.body[0] == bonus_food.position:
+            # Check bonus food consumption (area collision)
+            if bonus_food.active and bonus_food.is_hit(snake.body[0]):
                 snake.grow(amount=level_config["growth_rate"] * 2) # Extra growth for bonus
                 bonus_food.active = False
                 score += SCORE_PER_FOOD * BONUS_SCORE_MULTIPLIER
-                # Speed boost from bonus? Maybe too much. Let's stick to points and growth.
 
             # Spawn bonus food
             if not bonus_food.active and score_since_last_bonus >= level_config["bonus_threshold"]:
                 bonus_food.spawn(snake.body, food.position)
+                bonus_food.timer = level_config["bonus_duration"]
                 score_since_last_bonus = 0
         
         elif current_state == STATE_PAUSED:
@@ -245,10 +251,10 @@ def main():
 
             # Draw bonus food
             if bonus_food.active:
-                # Bonus food is 2x2 grid size (centered on its grid position)
-                bonus_rect = pygame.Rect(bonus_food.position[0] * GRID_SIZE - GRID_SIZE // 2, 
-                                         bonus_food.position[1] * GRID_SIZE + UI_HEIGHT - GRID_SIZE // 2, 
-                                         GRID_SIZE * 2, GRID_SIZE * 2)
+                # Bonus food is 3x3 grid size (centered on its grid position)
+                bonus_rect = pygame.Rect((bonus_food.position[0] - 1) * GRID_SIZE, 
+                                         (bonus_food.position[1] - 1) * GRID_SIZE + UI_HEIGHT, 
+                                         GRID_SIZE * 3, GRID_SIZE * 3)
                 pygame.draw.rect(screen, COLOR_BONUS_FOOD, bonus_rect, border_radius=5)
                 # Add a pulsing effect or glow? Simple border for now.
                 pygame.draw.rect(screen, COLOR_TEXT, bonus_rect, 1, border_radius=5)
@@ -269,6 +275,12 @@ def main():
             screen.blit(score_surface, (10, UI_HEIGHT // 2 - score_surface.get_height() // 2))
             screen.blit(high_score_surface, (SCREEN_WIDTH - high_score_surface.get_width() - 10, UI_HEIGHT // 2 - high_score_surface.get_height() // 2))
             screen.blit(level_surface, (SCREEN_WIDTH // 2 - level_surface.get_width() // 2, UI_HEIGHT // 2 - level_surface.get_height() // 2))
+
+            # Draw Bonus Timer
+            if bonus_food.active:
+                timer_text = f"BONUS: {max(0, int(bonus_food.timer + 1))}s"
+                timer_surf = font.render(timer_text, True, COLOR_TIMER)
+                screen.blit(timer_surf, (SCREEN_WIDTH // 2 - timer_surf.get_width() // 2, UI_HEIGHT - 25))
 
             if current_state == STATE_PAUSED:
                 overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT + UI_HEIGHT), pygame.SRCALPHA)

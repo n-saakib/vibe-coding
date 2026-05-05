@@ -66,7 +66,31 @@ class BonusFood(Food):
     def __init__(self, snake_body, other_food_pos=None):
         super().__init__(snake_body, other_food_pos)
         self.active = False
+        self.timer = 0
+        self.size = 3 # 3x3 grid cells
 
     def spawn(self, snake_body, other_food_pos=None):
-        super().spawn(snake_body, other_food_pos)
+        # Ensure it doesn't spawn too close to the edges to avoid clipping
+        while True:
+            self.position = (random.randint(1, GRID_WIDTH - 2), 
+                             random.randint(1, GRID_HEIGHT - 2))
+            
+            # Check if any part of the 3x3 area overlaps with snake or other food
+            overlap = False
+            for dx in range(-1, 2):
+                for dy in range(-1, 2):
+                    cell = (self.position[0] + dx, self.position[1] + dy)
+                    if cell in snake_body or cell == other_food_pos:
+                        overlap = True
+                        break
+                if overlap: break
+            
+            if not overlap:
+                break
         self.active = True
+
+    def is_hit(self, head_pos):
+        # Check if head is within the 3x3 area centered at self.position
+        hx, hy = head_pos
+        px, py = self.position
+        return px - 1 <= hx <= px + 1 and py - 1 <= hy <= py + 1

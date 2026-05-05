@@ -37,7 +37,7 @@ The game follows a structured sequence of events to get you started:
 4.  **The Game Loop**:
     - **Movement**: The snake moves constantly in the current direction.
     - **Eating**: Consuming food increases your score and triggers the **Growth Event**.
-    - **Bonus Food**: After reaching a level-specific score threshold, a **Golden Bonus Food** appears. Eating it gives **5x points** and double the normal growth.
+    - **Bonus Food**: After reaching a level-specific score threshold, a **3x3 Golden Bonus Food** appears for a limited time. Eating it gives **5x points** and double the normal growth. A countdown timer will appear at the top when it's active.
     - **Growth**: The snake grows by a specific number of segments based on your chosen difficulty level.
     - **Speeding Up**: Every 50 points, a **Difficulty Event** occurs, increasing the game speed.
 5.  **Game Over**: If you collide with yourself (or a wall in Standard mode), the game ends. Your high score is saved locally.

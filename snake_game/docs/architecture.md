@@ -20,6 +20,10 @@ Encapsulates the core game entities:
 - **`Food` Class**:
     - Manages its random position on the grid.
     - Ensures it doesn't spawn on the snake's body.
+- **`BonusFood` Class**:
+    - Inherits from `Food`.
+    - **Area Collision**: Occupies a 3x3 grid area. `is_hit(head_pos)` checks if the snake's head enters any part of this 9-cell block.
+    - **Timer**: Managed in the game loop; the bonus food disappears if the timer expires.
 
 ### 3. `main.py`
 The entry point and orchestrator:

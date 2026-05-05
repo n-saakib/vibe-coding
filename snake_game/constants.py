@@ -34,34 +34,40 @@ DIFFICULTY_LEVELS = {
         "start_fps": 7,
         "growth_rate": 1,
         "speed_inc": 0.2,
-        "bonus_threshold": 50
+        "bonus_threshold": 50,
+        "bonus_duration": 10 # seconds
     },
     "Pro": {
         "start_fps": 10,
         "growth_rate": 1,
         "speed_inc": 0.5,
-        "bonus_threshold": 80
+        "bonus_threshold": 80,
+        "bonus_duration": 8
     },
     "Pro Max": {
         "start_fps": 15,
         "growth_rate": 2,
         "speed_inc": 0.8,
-        "bonus_threshold": 120
+        "bonus_threshold": 120,
+        "bonus_duration": 7
     },
     "Ultra Pro Max": {
         "start_fps": 20,
         "growth_rate": 3,
         "speed_inc": 1.2,
-        "bonus_threshold": 200
+        "bonus_threshold": 200,
+        "bonus_duration": 6
     },
     "Ultra Pro Max +": {
         "start_fps": 25,
         "growth_rate": 5,
         "speed_inc": 2.0,
-        "bonus_threshold": 300
+        "bonus_threshold": 300,
+        "bonus_duration": 5
     }
 }
 
 COLOR_BUTTON = (50, 50, 50)
 COLOR_BUTTON_HOVER = (70, 70, 70)
 COLOR_BONUS_FOOD = (255, 215, 0) # Gold
+COLOR_TIMER = (255, 100, 100) # Red-ish
