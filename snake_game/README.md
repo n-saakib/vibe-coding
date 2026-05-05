@@ -31,8 +31,8 @@ python main.py
 
 The game follows a structured sequence of events to get you started:
 
-1.  **Mode Selection**: Choose between **Standard** (wall collision) or **Wrap Around** (no wall deaths).
-2.  **Difficulty Selection**: Pick one of the 5 levels. Higher levels start faster and grow the snake more aggressively.
+1.  **Size Selection**: Choose your preferred screen resolution: **Small** (400x400), **Medium** (600x600), or **Large** (800x800).
+2.  **Mode Selection**: Choose between **Standard** (wall collision) or **Wrap Around** (no wall deaths).
 3.  **Start Screen**: A final confirmation screen displays your chosen settings. Click **START GAME** to begin.
 4.  **The Game Loop**:
     - **Movement**: The snake moves constantly in the current direction.

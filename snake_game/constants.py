@@ -1,9 +1,15 @@
 # Game Configuration Constants
 
 # Window dimensions
+SCREEN_SIZES = {
+    "Small": 400,
+    "Medium": 600,
+    "Large": 800
+}
+# Default values (will be updated at runtime)
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 800
-UI_HEIGHT = 60
+UI_HEIGHT = 80 # Increased for more spacing
 
 # Grid settings
 GRID_SIZE = 10

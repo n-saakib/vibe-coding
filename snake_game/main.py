@@ -42,6 +42,7 @@ class Button:
         return self.is_hovered and mouse_up
 
 # Game States
+STATE_SIZE_SELECT = "SIZE_SELECT"
 STATE_MODE_SELECT = "MODE_SELECT"
 STATE_LEVEL_SELECT = "LEVEL_SELECT"
 STATE_START_SCREEN = "START_SCREEN"
@@ -54,6 +55,7 @@ def main():
     pygame.display.init()
     pygame.font.init()
     
+    # Start with a default size for the menu
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT + UI_HEIGHT))
     pygame.display.set_caption("Snake Game")
     clock = pygame.time.Clock()
@@ -61,10 +63,14 @@ def main():
     large_font = pygame.font.SysFont("Arial", 48)
 
     # Game State Variables
-    current_state = STATE_MODE_SELECT
+    current_state = STATE_SIZE_SELECT
+    selected_size_name = None
     selected_mode = None
     selected_level = None
     
+    # Global constants that need to be updated
+    global SCREEN_WIDTH, SCREEN_HEIGHT, GRID_WIDTH, GRID_HEIGHT
+
     # Initialize game objects
     snake = None
     food = None
@@ -79,6 +85,12 @@ def main():
     btn_width = 300
     center_x = SCREEN_WIDTH // 2 - btn_width // 2
     
+    size_buttons = [
+        Button(center_x, 200, btn_width, 50, "Small", font),
+        Button(center_x, 270, btn_width, 50, "Medium", font),
+        Button(center_x, 340, btn_width, 50, "Large", font)
+    ]
+
     mode_buttons = [
         Button(center_x, 200, btn_width, 50, MODE_WALL_COLLISION, font),
         Button(center_x, 270, btn_width, 50, MODE_WRAP_AROUND, font)
@@ -89,7 +101,7 @@ def main():
         level_buttons.append(Button(center_x, 150 + i * 60, btn_width, 50, level_name, font))
     
     start_btn_width = 400
-    start_button = Button(SCREEN_WIDTH // 2 - start_btn_width // 2, 350, start_btn_width, 80, "START GAME", large_font)
+    start_button = Button(SCREEN_WIDTH // 2 - start_btn_width // 2, 450, start_btn_width, 80, "START GAME", large_font)
     
     pause_buttons = [
         Button(center_x, 300, btn_width, 50, "RESUME", font),
@@ -126,11 +138,38 @@ def main():
                         current_state = STATE_PLAYING
                 elif current_state == STATE_GAME_OVER:
                     if event.key == pygame.K_r:
-                        current_state = STATE_MODE_SELECT
+                        current_state = STATE_SIZE_SELECT
                         high_score_saved = False
 
         # 2. Update Logic
-        if current_state == STATE_MODE_SELECT:
+        if current_state == STATE_SIZE_SELECT:
+            for btn in size_buttons:
+                btn.update(mouse_pos)
+                if btn.is_clicked(mouse_pos, mouse_up):
+                    selected_size_name = btn.text
+                    dim = SCREEN_SIZES[selected_size_name]
+                    SCREEN_WIDTH = dim
+                    SCREEN_HEIGHT = dim
+                    GRID_WIDTH = SCREEN_WIDTH // GRID_SIZE
+                    GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
+                    # Re-initialize screen and buttons
+                    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT + UI_HEIGHT))
+                    center_x = SCREEN_WIDTH // 2 - btn_width // 2
+                    mode_buttons = [
+                        Button(center_x, 200, btn_width, 50, MODE_WALL_COLLISION, font),
+                        Button(center_x, 270, btn_width, 50, MODE_WRAP_AROUND, font)
+                    ]
+                    level_buttons = []
+                    for i, level_name in enumerate(DIFFICULTY_LEVELS.keys()):
+                        level_buttons.append(Button(center_x, 150 + i * 60, btn_width, 50, level_name, font))
+                    start_button = Button(SCREEN_WIDTH // 2 - start_btn_width // 2, 450, start_btn_width, 80, "START GAME", large_font)
+                    pause_buttons = [
+                        Button(center_x, (SCREEN_HEIGHT + UI_HEIGHT) // 2 - 30, btn_width, 50, "RESUME", font),
+                        Button(center_x, (SCREEN_HEIGHT + UI_HEIGHT) // 2 + 40, btn_width, 50, "QUIT TO MENU", font)
+                    ]
+                    current_state = STATE_MODE_SELECT
+
+        elif current_state == STATE_MODE_SELECT:
             for btn in mode_buttons:
                 btn.update(mouse_pos)
                 if btn.is_clicked(mouse_pos, mouse_up):
@@ -219,7 +258,13 @@ def main():
         # 3. Rendering
         screen.fill(COLOR_BACKGROUND)
         
-        if current_state == STATE_MODE_SELECT:
+        if current_state == STATE_SIZE_SELECT:
+            title = large_font.render("Select Screen Size", True, COLOR_TEXT)
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
+            for btn in size_buttons:
+                btn.draw(screen)
+
+        elif current_state == STATE_MODE_SELECT:
             title = large_font.render("Select Game Mode", True, COLOR_TEXT)
             screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
             for btn in mode_buttons:
@@ -233,9 +278,17 @@ def main():
 
         elif current_state == STATE_START_SCREEN:
             title = large_font.render("Ready?", True, COLOR_TEXT)
-            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 150))
-            info = font.render(f"Mode: {selected_mode} | Level: {selected_level}", True, COLOR_SNAKE_HEAD)
-            screen.blit(info, (SCREEN_WIDTH // 2 - info.get_width() // 2, 220))
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 120))
+            
+            info_lines = [
+                f"Size: {selected_size_name}",
+                f"Mode: {selected_mode}",
+                f"Level: {selected_level}"
+            ]
+            for i, line in enumerate(info_lines):
+                info_surf = font.render(line, True, COLOR_SNAKE_HEAD)
+                screen.blit(info_surf, (SCREEN_WIDTH // 2 - info_surf.get_width() // 2, 200 + i * 35))
+            
             start_button.draw(screen)
 
         elif current_state == STATE_PLAYING or current_state == STATE_PAUSED or current_state == STATE_GAME_OVER:
@@ -272,15 +325,20 @@ def main():
             score_surface = font.render(f"Score: {score}", True, COLOR_TEXT)
             high_score_surface = font.render(f"High Score: {high_score}", True, COLOR_TEXT)
             level_surface = font.render(f"Level: {selected_level}", True, COLOR_TEXT)
-            screen.blit(score_surface, (10, UI_HEIGHT // 2 - score_surface.get_height() // 2))
-            screen.blit(high_score_surface, (SCREEN_WIDTH - high_score_surface.get_width() - 10, UI_HEIGHT // 2 - high_score_surface.get_height() // 2))
-            screen.blit(level_surface, (SCREEN_WIDTH // 2 - level_surface.get_width() // 2, UI_HEIGHT // 2 - level_surface.get_height() // 2))
+            
+            # Position Score/High Score at the very top
+            screen.blit(score_surface, (10, 10))
+            screen.blit(high_score_surface, (SCREEN_WIDTH - high_score_surface.get_width() - 10, 10))
+            
+            # Position Level and Bonus Timer with more vertical space between them
+            screen.blit(level_surface, (SCREEN_WIDTH // 2 - level_surface.get_width() // 2, 10))
 
             # Draw Bonus Timer
             if bonus_food.active:
                 timer_text = f"BONUS: {max(0, int(bonus_food.timer + 1))}s"
                 timer_surf = font.render(timer_text, True, COLOR_TIMER)
-                screen.blit(timer_surf, (SCREEN_WIDTH // 2 - timer_surf.get_width() // 2, UI_HEIGHT - 25))
+                # Moved further down to increase spacing from level_surface
+                screen.blit(timer_surf, (SCREEN_WIDTH // 2 - timer_surf.get_width() // 2, UI_HEIGHT - 35))
 
             if current_state == STATE_PAUSED:
                 overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT + UI_HEIGHT), pygame.SRCALPHA)

@@ -29,9 +29,10 @@ Encapsulates the core game entities:
 The entry point and orchestrator:
 - **Initialization**: Sets up Pygame, the screen, and clock.
 - **`Button` Class**: A simple UI helper for drawing interactive menu buttons.
-- **State Machine**: Orchestrates the game flow through five distinct states:
-    1. `STATE_MODE_SELECT`: Choose between Standard and Wrap Around.
-    2. `STATE_LEVEL_SELECT`: Choose the difficulty level.
+- **State Machine**: Orchestrates the game flow through six distinct states:
+    1. `STATE_SIZE_SELECT`: Choose the screen resolution (Small, Medium, Large).
+    2. `STATE_MODE_SELECT`: Choose between Standard and Wrap Around.
+    3. `STATE_LEVEL_SELECT`: Choose the difficulty level.
     3. `STATE_START_SCREEN`: Confirmation screen showing selected settings.
     4. `STATE_PLAYING`: The active game loop using the chosen configurations.
     5. `STATE_GAME_OVER`: Displays the final score and allows returning to the main menu.
