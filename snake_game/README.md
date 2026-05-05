@@ -22,8 +22,23 @@ python main.py
 ```
 
 ### 3. Controls
+- **Mouse**: Select game mode and difficulty level in the menus.
 - **Arrow Keys**: Change direction (Up, Down, Left, Right).
-- **R Key**: Restart the game when in the Game Over state.
+- **R Key**: Return to the main menu when in the Game Over state.
+
+## Game Features
+
+### Game Modes
+- **Standard**: The classic experience. Hitting a wall ends the game.
+- **Wrap Around**: The snake wraps to the opposite side of the screen when it hits an edge.
+
+### Difficulty Levels
+There are 5 levels of difficulty, each affecting starting speed, how fast the snake grows, and how quickly the speed increases:
+- **Base**: 7 FPS, 1 segment/food, 0.2 speed increase.
+- **Pro**: 10 FPS, 1 segment/food, 0.5 speed increase.
+- **Pro Max**: 15 FPS, 2 segments/food, 0.8 speed increase.
+- **Ultra Pro Max**: 20 FPS, 3 segments/food, 1.2 speed increase.
+- **Ultra Pro Max +**: 25 FPS, 5 segments/food, 2.0 speed increase.
 
 ## Documentation Guide
 For a deeper dive into the technical details:
