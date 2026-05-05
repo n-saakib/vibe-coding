@@ -26,6 +26,20 @@ python main.py
 - **Arrow Keys**: Change direction (Up, Down, Left, Right).
 - **R Key**: Return to the main menu when in the Game Over state.
 
+## Gameplay & Events
+
+The game follows a structured sequence of events to get you started:
+
+1.  **Mode Selection**: Choose between **Standard** (wall collision) or **Wrap Around** (no wall deaths).
+2.  **Difficulty Selection**: Pick one of the 5 levels. Higher levels start faster and grow the snake more aggressively.
+3.  **Start Screen**: A final confirmation screen displays your chosen settings. Click **START GAME** to begin.
+4.  **The Game Loop**:
+    - **Movement**: The snake moves constantly in the current direction.
+    - **Eating**: Consuming food increases your score and triggers the **Growth Event**.
+    - **Growth**: The snake grows by a specific number of segments based on your chosen difficulty level.
+    - **Speeding Up**: Every 50 points, a **Difficulty Event** occurs, increasing the game speed.
+5.  **Game Over**: If you collide with yourself (or a wall in Standard mode), the game ends. Your high score is saved locally.
+
 ## Game Features
 
 ### Game Modes
