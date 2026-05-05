@@ -24,6 +24,7 @@ python main.py
 ### 3. Controls
 - **Mouse**: Select game mode and difficulty level in the menus.
 - **Arrow Keys**: Change direction (Up, Down, Left, Right).
+- **P / ESC Key**: Pause or Resume the game.
 - **R Key**: Return to the main menu when in the Game Over state.
 
 ## Gameplay & Events

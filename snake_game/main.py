@@ -46,6 +46,7 @@ STATE_MODE_SELECT = "MODE_SELECT"
 STATE_LEVEL_SELECT = "LEVEL_SELECT"
 STATE_START_SCREEN = "START_SCREEN"
 STATE_PLAYING = "PLAYING"
+STATE_PAUSED = "PAUSED"
 STATE_GAME_OVER = "GAME_OVER"
 
 def main():
@@ -87,6 +88,11 @@ def main():
     
     start_btn_width = 400
     start_button = Button(SCREEN_WIDTH // 2 - start_btn_width // 2, 350, start_btn_width, 80, "START GAME", large_font)
+    
+    pause_buttons = [
+        Button(center_x, 300, btn_width, 50, "RESUME", font),
+        Button(center_x, 370, btn_width, 50, "QUIT TO MENU", font)
+    ]
 
     while True:
         mouse_pos = pygame.mouse.get_pos()
@@ -111,6 +117,11 @@ def main():
                         snake.set_direction((-1, 0))
                     elif event.key == pygame.K_RIGHT:
                         snake.set_direction((1, 0))
+                    elif event.key == pygame.K_p or event.key == pygame.K_ESCAPE:
+                        current_state = STATE_PAUSED
+                elif current_state == STATE_PAUSED:
+                    if event.key == pygame.K_p or event.key == pygame.K_ESCAPE:
+                        current_state = STATE_PLAYING
                 elif current_state == STATE_GAME_OVER:
                     if event.key == pygame.K_r:
                         current_state = STATE_MODE_SELECT
@@ -163,6 +174,16 @@ def main():
                 if score % DIFFICULTY_STEP == 0:
                     fps += level_config["speed_inc"]
         
+        elif current_state == STATE_PAUSED:
+            for btn in pause_buttons:
+                btn.update(mouse_pos)
+                if btn.is_clicked(mouse_pos, mouse_up):
+                    if btn.text == "RESUME":
+                        current_state = STATE_PLAYING
+                    elif btn.text == "QUIT TO MENU":
+                        current_state = STATE_MODE_SELECT
+                        high_score_saved = False
+        
         elif current_state == STATE_GAME_OVER:
             if not high_score_saved:
                 if score > high_score:
@@ -192,7 +213,7 @@ def main():
             screen.blit(info, (SCREEN_WIDTH // 2 - info.get_width() // 2, 220))
             start_button.draw(screen)
 
-        elif current_state == STATE_PLAYING or current_state == STATE_GAME_OVER:
+        elif current_state == STATE_PLAYING or current_state == STATE_PAUSED or current_state == STATE_GAME_OVER:
             # Draw Header Background
             pygame.draw.rect(screen, (50, 50, 50), (0, 0, SCREEN_WIDTH, UI_HEIGHT))
             pygame.draw.line(screen, COLOR_TEXT, (0, UI_HEIGHT), (SCREEN_WIDTH, UI_HEIGHT), 2)
@@ -219,6 +240,16 @@ def main():
             screen.blit(score_surface, (10, UI_HEIGHT // 2 - score_surface.get_height() // 2))
             screen.blit(high_score_surface, (SCREEN_WIDTH - high_score_surface.get_width() - 10, UI_HEIGHT // 2 - high_score_surface.get_height() // 2))
             screen.blit(level_surface, (SCREEN_WIDTH // 2 - level_surface.get_width() // 2, UI_HEIGHT // 2 - level_surface.get_height() // 2))
+
+            if current_state == STATE_PAUSED:
+                overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT + UI_HEIGHT), pygame.SRCALPHA)
+                overlay.fill((0, 0, 0, 150))
+                screen.blit(overlay, (0, 0))
+
+                pause_surface = large_font.render("PAUSED", True, COLOR_TEXT)
+                screen.blit(pause_surface, (SCREEN_WIDTH // 2 - pause_surface.get_width() // 2, 200))
+                for btn in pause_buttons:
+                    btn.draw(screen)
 
             if current_state == STATE_GAME_OVER:
                 overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT + UI_HEIGHT), pygame.SRCALPHA)
