@@ -1,5 +1,14 @@
 import random
-from constants import GRID_WIDTH, GRID_HEIGHT
+from constants import GRID_WIDTH as INITIAL_GRID_WIDTH, GRID_HEIGHT as INITIAL_GRID_HEIGHT
+
+# Current grid dimensions (can be updated by main.py)
+GRID_WIDTH = INITIAL_GRID_WIDTH
+GRID_HEIGHT = INITIAL_GRID_HEIGHT
+
+def set_grid_dimensions(width, height):
+    global GRID_WIDTH, GRID_HEIGHT
+    GRID_WIDTH = width
+    GRID_HEIGHT = height
 
 class Snake:
     def __init__(self):

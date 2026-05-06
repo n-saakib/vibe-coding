@@ -2,7 +2,7 @@ import pygame
 import sys
 import os
 from constants import *
-from snake_logic import Snake, Food, BonusFood
+from snake_logic import Snake, Food, BonusFood, set_grid_dimensions
 
 def load_high_score():
     if os.path.exists("highscore.txt"):
@@ -82,26 +82,26 @@ def main():
     high_score_saved = False
 
     # UI Elements
-    btn_width = 300
+    btn_width = 250
     center_x = SCREEN_WIDTH // 2 - btn_width // 2
     
     size_buttons = [
-        Button(center_x, 200, btn_width, 50, "Small", font),
-        Button(center_x, 270, btn_width, 50, "Medium", font),
-        Button(center_x, 340, btn_width, 50, "Large", font)
+        Button(center_x, SCREEN_HEIGHT // 3, btn_width, 50, "Small", font),
+        Button(center_x, SCREEN_HEIGHT // 3 + 70, btn_width, 50, "Medium", font),
+        Button(center_x, SCREEN_HEIGHT // 3 + 140, btn_width, 50, "Large", font)
     ]
 
     mode_buttons = [
-        Button(center_x, 200, btn_width, 50, MODE_WALL_COLLISION, font),
-        Button(center_x, 270, btn_width, 50, MODE_WRAP_AROUND, font)
+        Button(center_x, SCREEN_HEIGHT // 3, btn_width, 50, MODE_WALL_COLLISION, font),
+        Button(center_x, SCREEN_HEIGHT // 3 + 70, btn_width, 50, MODE_WRAP_AROUND, font)
     ]
     
     level_buttons = []
     for i, level_name in enumerate(DIFFICULTY_LEVELS.keys()):
-        level_buttons.append(Button(center_x, 150 + i * 60, btn_width, 50, level_name, font))
+        level_buttons.append(Button(center_x, SCREEN_HEIGHT // 4 + i * 60, btn_width, 50, level_name, font))
     
-    start_btn_width = 400
-    start_button = Button(SCREEN_WIDTH // 2 - start_btn_width // 2, 450, start_btn_width, 80, "START GAME", large_font)
+    start_btn_width = int(SCREEN_WIDTH * 0.8)
+    start_button = Button(SCREEN_WIDTH // 2 - start_btn_width // 2, SCREEN_HEIGHT - 100, start_btn_width, 80, "START GAME", large_font)
     
     pause_buttons = [
         Button(center_x, 300, btn_width, 50, "RESUME", font),
@@ -152,17 +152,28 @@ def main():
                     SCREEN_HEIGHT = dim
                     GRID_WIDTH = SCREEN_WIDTH // GRID_SIZE
                     GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
+                    
+                    # Update snake_logic grid dimensions
+                    set_grid_dimensions(GRID_WIDTH, GRID_HEIGHT)
+                    
                     # Re-initialize screen and buttons
                     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT + UI_HEIGHT))
+                    btn_width = 250
                     center_x = SCREEN_WIDTH // 2 - btn_width // 2
+                    
+                    # Calculate dynamic Y offsets based on screen height
+                    y_offset_start = SCREEN_HEIGHT // 4
                     mode_buttons = [
-                        Button(center_x, 200, btn_width, 50, MODE_WALL_COLLISION, font),
-                        Button(center_x, 270, btn_width, 50, MODE_WRAP_AROUND, font)
+                        Button(center_x, y_offset_start, btn_width, 50, MODE_WALL_COLLISION, font),
+                        Button(center_x, y_offset_start + 70, btn_width, 50, MODE_WRAP_AROUND, font)
                     ]
                     level_buttons = []
                     for i, level_name in enumerate(DIFFICULTY_LEVELS.keys()):
-                        level_buttons.append(Button(center_x, 150 + i * 60, btn_width, 50, level_name, font))
-                    start_button = Button(SCREEN_WIDTH // 2 - start_btn_width // 2, 450, start_btn_width, 80, "START GAME", large_font)
+                        level_buttons.append(Button(center_x, y_offset_start - 30 + i * 60, btn_width, 50, level_name, font))
+                    
+                    start_btn_width = int(SCREEN_WIDTH * 0.8)
+                    start_button = Button(SCREEN_WIDTH // 2 - start_btn_width // 2, SCREEN_HEIGHT - 100, start_btn_width, 80, "START GAME", large_font)
+                    
                     pause_buttons = [
                         Button(center_x, (SCREEN_HEIGHT + UI_HEIGHT) // 2 - 30, btn_width, 50, "RESUME", font),
                         Button(center_x, (SCREEN_HEIGHT + UI_HEIGHT) // 2 + 40, btn_width, 50, "QUIT TO MENU", font)
@@ -260,34 +271,35 @@ def main():
         
         if current_state == STATE_SIZE_SELECT:
             title = large_font.render("Select Screen Size", True, COLOR_TEXT)
-            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, SCREEN_HEIGHT // 6))
             for btn in size_buttons:
                 btn.draw(screen)
 
         elif current_state == STATE_MODE_SELECT:
             title = large_font.render("Select Game Mode", True, COLOR_TEXT)
-            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, SCREEN_HEIGHT // 6))
             for btn in mode_buttons:
                 btn.draw(screen)
 
         elif current_state == STATE_LEVEL_SELECT:
             title = large_font.render("Select Difficulty", True, COLOR_TEXT)
-            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 50))
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, SCREEN_HEIGHT // 10))
             for btn in level_buttons:
                 btn.draw(screen)
 
         elif current_state == STATE_START_SCREEN:
             title = large_font.render("Ready?", True, COLOR_TEXT)
-            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 120))
+            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, SCREEN_HEIGHT // 6))
             
             info_lines = [
                 f"Size: {selected_size_name}",
                 f"Mode: {selected_mode}",
                 f"Level: {selected_level}"
             ]
+            y_base = SCREEN_HEIGHT // 3
             for i, line in enumerate(info_lines):
                 info_surf = font.render(line, True, COLOR_SNAKE_HEAD)
-                screen.blit(info_surf, (SCREEN_WIDTH // 2 - info_surf.get_width() // 2, 200 + i * 35))
+                screen.blit(info_surf, (SCREEN_WIDTH // 2 - info_surf.get_width() // 2, y_base + i * 35))
             
             start_button.draw(screen)
 
@@ -346,7 +358,7 @@ def main():
                 screen.blit(overlay, (0, 0))
 
                 pause_surface = large_font.render("PAUSED", True, COLOR_TEXT)
-                screen.blit(pause_surface, (SCREEN_WIDTH // 2 - pause_surface.get_width() // 2, 200))
+                screen.blit(pause_surface, (SCREEN_WIDTH // 2 - pause_surface.get_width() // 2, (SCREEN_HEIGHT + UI_HEIGHT) // 4))
                 for btn in pause_buttons:
                     btn.draw(screen)
 
