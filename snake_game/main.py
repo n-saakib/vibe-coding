@@ -51,6 +51,9 @@ STATE_PAUSED = "PAUSED"
 STATE_GAME_OVER = "GAME_OVER"
 
 def main():
+    # Global constants that need to be updated
+    global SCREEN_WIDTH, SCREEN_HEIGHT, GRID_WIDTH, GRID_HEIGHT
+
     # Initialize Pygame modules selectively to avoid audio/ALSA errors
     pygame.display.init()
     pygame.font.init()
@@ -67,9 +70,6 @@ def main():
     selected_size_name = None
     selected_mode = None
     selected_level = None
-    
-    # Global constants that need to be updated
-    global SCREEN_WIDTH, SCREEN_HEIGHT, GRID_WIDTH, GRID_HEIGHT
 
     # Initialize game objects
     snake = None
