@@ -12,6 +12,7 @@ Contains all configuration values such as screen dimensions, grid size, colors, 
 
 ### 2. `snake_logic.py`
 Encapsulates the core game entities:
+- **`set_grid_dimensions(width, height)`**: A utility function that updates the global grid dimensions, allowing the game to scale across different screen sizes.
 - **`Snake` Class**: 
     - Maintains a list of coordinates representing its body.
     - **`move(wrap_around)`**: Handles movement logic, with optional modulo arithmetic for wrapping around screen boundaries.
@@ -33,9 +34,9 @@ The entry point and orchestrator:
     1. `STATE_SIZE_SELECT`: Choose the screen resolution (Small, Medium, Large).
     2. `STATE_MODE_SELECT`: Choose between Standard and Wrap Around.
     3. `STATE_LEVEL_SELECT`: Choose the difficulty level.
-    3. `STATE_START_SCREEN`: Confirmation screen showing selected settings.
-    4. `STATE_PLAYING`: The active game loop using the chosen configurations.
-    5. `STATE_GAME_OVER`: Displays the final score and allows returning to the main menu.
+    4. `STATE_START_SCREEN`: Confirmation screen showing selected settings.
+    5. `STATE_PLAYING`: The active game loop using the chosen configurations.
+    6. `STATE_GAME_OVER`: Displays the final score and allows returning to the main menu.
 - **Game Loop**:
     - **Input Handling**: Translates key presses and mouse clicks based on the current state.
     - **Update Logic**: Moves the snake, checks collisions, and handles score-based speed scaling.
