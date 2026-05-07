@@ -1,6 +1,11 @@
 # Game Configuration Constants
 
 # Window dimensions
+INITIAL_WINDOW_WIDTH = 800
+INITIAL_WINDOW_HEIGHT = 800
+WINDOW_MIN_BUFFER = 40
+MIN_UI_WIDTH = 500
+
 SCREEN_SIZES = {
     "Small": 400,
     "Medium": 600,

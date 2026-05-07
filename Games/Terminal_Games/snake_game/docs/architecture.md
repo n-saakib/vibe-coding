@@ -28,29 +28,19 @@ Encapsulates the core game entities:
 
 ### 3. `main.py`
 The entry point and orchestrator:
-- **Initialization**: Sets up Pygame, the screen, and clock.
-- **`Button` Class**: A simple UI helper for drawing interactive menu buttons.
-- **State Machine**: Orchestrates the game flow through six distinct states:
-    1. `STATE_SIZE_SELECT`: Choose the screen resolution (Small, Medium, Large).
-    2. `STATE_MODE_SELECT`: Choose between Standard and Wrap Around.
-    3. `STATE_LEVEL_SELECT`: Choose the difficulty level.
-    4. `STATE_START_SCREEN`: Confirmation screen showing selected settings.
-    5. `STATE_PLAYING`: The active game loop using the chosen configurations.
-    6. `STATE_GAME_OVER`: Displays the final score and allows returning to the main menu.
+- **Initialization**: Sets up Pygame with a resizable window (`pygame.RESIZABLE`).
+- **`Button` Class**: A UI helper that is dynamically repositioned when the window is resized.
+- **Layout Management**:
+    - **`update_layout()`**: A central function that calculates board dimensions, enforces minimum window sizes (with buffers), and centers the board within the window using `offset_x` and `offset_y`.
+- **State Machine**: Orchestrates the game flow. Selecting a size now updates the board's grid but keeps the window stable unless it's too small for the new board.
 - **Game Loop**:
-    - **Input Handling**: Translates key presses and mouse clicks based on the current state.
-    - **Update Logic**: Moves the snake, checks collisions, and handles score-based speed scaling.
-    - **Rendering**: Draws state-specific UI or the game world.
+    - **Input Handling**: Handles `VIDEORESIZE` events to maintain layout integrity.
+    - **Rendering**: Uses `offset_x` and `offset_y` to center all game objects (Snake, Food, Bonus Food) within the window. Draws a visual border to define the playable area.
 
-## Data Flow
-1. **Setup**: User selects Mode and Level via the UI buttons.
-2. **Configuration**: Level-specific constants are loaded into the game state (initial FPS, growth rate).
-3. **Input**: User presses an arrow key.
-4. **Direction Update**: `main.py` updates the snake's direction.
-5. **Movement**: `Snake.move()` updates coordinates, wrapping if enabled.
-6. **Collision Check**: `main.py` checks if the head hit a wall (if enabled), self, or food.
-7. **Score & Difficulty**: If food is eaten, snake grows by the level's `growth_rate`, score increases, and FPS scales by the level's `speed_inc`.
-8. **Render**: The new state is drawn to the screen.
+## Sizing and Scaling
+- **Window Size**: Decoupled from the game board. The window can be manually resized, but it will always stay larger than the board plus a `WINDOW_MIN_BUFFER`.
+- **UI Constraints**: A `MIN_UI_WIDTH` ensures that header text (Score, High Score, Level) never overlaps.
+- **Board Centering**: The board is dynamically centered in the space below the fixed-height UI header.
 
 ## Persistence
 - High score is stored in `highscore.txt` as a single integer.
