@@ -29,13 +29,30 @@ Encapsulates the core game entities:
 ### 3. `main.py`
 The entry point and orchestrator:
 - **Initialization**: Sets up Pygame with a resizable window (`pygame.RESIZABLE`).
-- **`Button` Class**: A UI helper that is dynamically repositioned when the window is resized.
+- **`Button` Class**: A UI helper that is dynamically repositioned when the window is resized to ensure interactive areas match the visuals.
 - **Layout Management**:
     - **`update_layout()`**: A central function that calculates board dimensions, enforces minimum window sizes (with buffers), and centers the board within the window using `offset_x` and `offset_y`.
-- **State Machine**: Orchestrates the game flow. Selecting a size now updates the board's grid but keeps the window stable unless it's too small for the new board.
+- **State Machine**: Orchestrates the game flow through seven distinct states:
+    1. `STATE_SIZE_SELECT`: Choose the game board size (Small, Medium, Large).
+    2. `STATE_MODE_SELECT`: Choose between Standard and Wrap Around.
+    3. `STATE_LEVEL_SELECT`: Choose the difficulty level.
+    4. `STATE_START_SCREEN`: Confirmation screen showing selected settings.
+    5. `STATE_PLAYING`: The active game loop using the chosen configurations.
+    6. `STATE_PAUSED`: Suspends the game loop and displays a menu.
+    7. `STATE_GAME_OVER`: Displays the final score and allows returning to the main menu.
 - **Game Loop**:
-    - **Input Handling**: Handles `VIDEORESIZE` events to maintain layout integrity.
+    - **Input Handling**: Translates key presses, mouse clicks, and handles `VIDEORESIZE` events.
+    - **Update Logic**: Moves the snake, checks collisions, and handles score-based speed scaling.
     - **Rendering**: Uses `offset_x` and `offset_y` to center all game objects (Snake, Food, Bonus Food) within the window. Draws a visual border to define the playable area.
+
+## Data Flow
+1. **Setup**: User selects Board Size, Mode, and Level via the UI buttons.
+2. **Configuration**: `update_layout()` is called to set the initial rendering offsets and window size.
+3. **Input**: User presses an arrow key or resizes the window.
+4. **Layout Update**: If the window is resized, `update_layout()` recalculates offsets and button positions.
+5. **Movement**: `Snake.move()` updates coordinates based on the current grid dimensions.
+6. **Collision Check**: `main.py` checks for wall or self-collision using the logical grid bounds.
+7. **Render**: The game state is rendered to the screen, applying `offset_x` and `offset_y` to all grid-based coordinates to ensure the board remains centered.
 
 ## Sizing and Scaling
 - **Window Size**: Decoupled from the game board. The window can be manually resized, but it will always stay larger than the board plus a `WINDOW_MIN_BUFFER`.

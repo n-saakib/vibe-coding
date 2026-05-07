@@ -31,7 +31,7 @@ python main.py
 
 The game follows a structured sequence of events to get you started:
 
-1.  **Size Selection**: Choose your preferred screen resolution: **Small** (400x400), **Medium** (600x600), or **Large** (800x800).
+1.  **Size Selection**: Choose your preferred game board size: **Small** (40x40 grid), **Medium** (60x60 grid), or **Large** (80x80 grid). The window is resizable and will automatically center the game board within the playable area.
 2.  **Mode Selection**: Choose between **Standard** (wall collision) or **Wrap Around** (no wall deaths).
 3.  **Start Screen**: A final confirmation screen displays your chosen settings. Click **START GAME** to begin.
 4.  **The Game Loop**:
