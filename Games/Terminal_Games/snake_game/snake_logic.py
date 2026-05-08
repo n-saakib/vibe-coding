@@ -22,6 +22,7 @@ class Snake:
         self.new_direction = (1, 0)
         self.growth_pool = 0
         self.command_queue = []  # F1: Input buffering queue
+        self.prev_body = list(self.body)  # F5: For interpolation
 
     def set_direction(self, direction):
         """Enqueue a directional command. Validates: no reverse, no duplicate of last queued."""
@@ -43,6 +44,7 @@ class Snake:
             self.new_direction = self.command_queue.pop(0)
 
     def move(self, wrap_around=False):
+        self.prev_body = list(self.body)  # F5: Save previous positions
         self.direction = self.new_direction
         head_x, head_y = self.body[0]
         dir_x, dir_y = self.direction

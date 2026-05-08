@@ -120,6 +120,9 @@ def main():
     shake_timer = 0.0
     shake_intensity = 0
     particles = []
+    # F5: Tick timing for interpolation
+    last_tick_time = 0.0
+    tick_accumulator = 0.0
 
     # UI Elements
     btn_width = 250
@@ -225,6 +228,11 @@ def main():
                 attempts += 1
 
     while True:
+        # F5: Time tracking for interpolation
+        current_time = pygame.time.get_ticks() / 1000.0
+        tick_duration = 1.0 / max(fps, 1) if fps > 0 else 1.0 / 7
+        t = min(1.0, (current_time - last_tick_time) / tick_duration) if last_tick_time > 0 else 0.0
+        
         mouse_pos = pygame.mouse.get_pos()
         mouse_up = False
 
@@ -307,6 +315,7 @@ def main():
                 shake_timer = 0.0  # F4: Reset shake
                 shake_intensity = 0
                 particles = []     # F4: Reset particles
+                last_tick_time = pygame.time.get_ticks() / 1000.0  # F5: Init tick timer
                 current_state = STATE_PLAYING
 
         elif current_state == STATE_PLAYING:
@@ -315,6 +324,7 @@ def main():
             
             snake.process_queue()  # F1: Process one buffered input per tick
             snake.move(wrap_around=wrap_around)
+            last_tick_time = current_time  # F5: Record tick time for interpolation
             
             # Check collision
             if snake.check_collision(wall_collision=wall_collision):
@@ -491,11 +501,33 @@ def main():
                 pygame.draw.rect(screen, COLOR_BONUS_FOOD, bonus_rect, border_radius=5)
                 pygame.draw.rect(screen, COLOR_TEXT, bonus_rect, 1, border_radius=5)
             
-            # Draw snake
-            for i, segment in enumerate(snake.body):
+            # Draw snake (F5: interpolated positions)
+            prev = snake.prev_body
+            curr = snake.body
+            wrap = (selected_mode == MODE_WRAP_AROUND) if selected_mode else False
+            for i, segment in enumerate(curr):
                 color = COLOR_SNAKE_HEAD if i == 0 else COLOR_SNAKE_BODY
-                seg_rect = pygame.Rect(render_ox + segment[0] * GRID_SIZE, 
-                                       render_oy + segment[1] * GRID_SIZE, 
+                # Get prev position (handle length mismatch)
+                if i < len(prev):
+                    px, py = prev[i]
+                else:
+                    px, py = segment  # New segment, no interpolation
+                cx, cy = segment
+                # Wrap-aware lerp
+                dx = cx - px
+                dy = cy - py
+                if wrap:
+                    if dx > GRID_WIDTH // 2:
+                        px += GRID_WIDTH
+                    elif dx < -GRID_WIDTH // 2:
+                        px -= GRID_WIDTH
+                    if dy > GRID_HEIGHT // 2:
+                        py += GRID_HEIGHT
+                    elif dy < -GRID_HEIGHT // 2:
+                        py -= GRID_HEIGHT
+                rx = (px + (cx - px) * t) * GRID_SIZE
+                ry = (py + (cy - py) * t) * GRID_SIZE
+                seg_rect = pygame.Rect(int(render_ox + rx), int(render_oy + ry),
                                        GRID_SIZE, GRID_SIZE)
                 pygame.draw.rect(screen, color, seg_rect)
                 pygame.draw.rect(screen, COLOR_BACKGROUND, seg_rect, 1)
