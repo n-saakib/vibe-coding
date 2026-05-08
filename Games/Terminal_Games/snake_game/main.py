@@ -403,6 +403,12 @@ def main():
                     if head in obs["cells"]:
                         if head not in obs["safe_segments"]:
                             current_state = STATE_GAME_OVER
+                            # F4: Death shake & particles
+                            head_screen_x = offset_x + head[0] * GRID_SIZE + GRID_SIZE // 2
+                            head_screen_y = offset_y + head[1] * GRID_SIZE + GRID_SIZE // 2
+                            spawn_particles(head_screen_x, head_screen_y, COLOR_FOOD, PARTICLE_COUNT_DEATH)
+                            shake_timer = SHAKE_DURATION_DEATH
+                            shake_intensity = SHAKE_INTENSITY_DEATH
                     
                     # Update safe segments: remove any that are no longer in the wall
                     obs["safe_segments"] = [seg for seg in obs["safe_segments"] if seg in obs["cells"] and seg in snake.body]
@@ -475,17 +481,18 @@ def main():
 
         # F4: Shake timer and particle updates (runs for all game-active states)
         if current_state in (STATE_PLAYING, STATE_PAUSED, STATE_GAME_OVER):
+            # Use real delta time for visual effects
+            frame_dt = 1.0 / 60.0 # Standard refresh rate
             if shake_timer > 0:
-                shake_timer -= 1 / max(fps, 1)
+                shake_timer -= frame_dt
                 if shake_timer <= 0:
                     shake_timer = 0.0
                     shake_intensity = 0
             
-            dt = 1.0 / max(fps, 1)
             for p in particles[:]:
-                p["x"] += p["vx"] * dt
-                p["y"] += p["vy"] * dt
-                p["life"] -= dt
+                p["x"] += p["vx"] * frame_dt
+                p["y"] += p["vy"] * frame_dt
+                p["life"] -= frame_dt
                 if p["life"] <= 0:
                     particles.remove(p)
 
