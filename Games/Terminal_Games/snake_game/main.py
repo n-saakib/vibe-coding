@@ -207,14 +207,29 @@ def main():
     # F8: Obstacle spawn helper
     def spawn_obstacles():
         nonlocal obstacles
-        # Only spawn sometimes (randomized)
+        # 1. When a set of walls are already present, a new set should not appear
+        if obstacles:
+            return
+
+        # 2. Only spawn sometimes (randomized)
         if random.random() > OBSTACLE_SPAWN_CHANCE:
             return
 
+        # 3. Maximum walls mapping based on difficulty
+        difficulty_max_map = {
+            "Base": 1,
+            "Pro": 2,
+            "Pro Max": 3,
+            "Ultra Pro Max": 4,
+            "Ultra Pro Max +": 5
+        }
+        abs_max = difficulty_max_map.get(selected_level, 3)
+        
         # Obstacle size scales with board (min 2x2 cells)
         obs_cells = max(OBSTACLE_MIN_CELLS, GRID_WIDTH // 20)
-        # Increase count slightly with level
-        max_count = min(OBSTACLE_COUNT_MAX + (level // 2), 6)
+        
+        # Scaling count based on level, but capped by difficulty-based max
+        max_count = min(OBSTACLE_COUNT_MIN + (level // 3), abs_max)
         count = random.randint(OBSTACLE_COUNT_MIN, max_count)
         
         for _ in range(count):
@@ -403,7 +418,7 @@ def main():
             if snake.body[0] == food.position:
                 old_food_x, old_food_y = food.position  # F4: save before spawn moves it
                 snake.grow(amount=level_config["growth_rate"])
-                food.spawn(snake.body, bonus_food.position if bonus_food.active else None)
+                food.spawn(snake.body, bonus_food)
                 score += SCORE_PER_FOOD
                 score_since_last_bonus += SCORE_PER_FOOD
                 
