@@ -36,8 +36,9 @@ The game follows a structured sequence of events to get you started:
 3.  **Start Screen**: A final confirmation screen displays your chosen settings. Click **START GAME** to begin.
 4.  **The Game Loop**:
     - **Movement**: The snake moves constantly in the current direction.
-    - **Eating**: Consuming food increases your score and triggers the **Growth Event**.
-    - **Bonus Food**: After reaching a level-specific score threshold, a **3x3 Golden Bonus Food** appears for a limited time. Eating it gives **5x points** and double the normal growth. A countdown timer will appear at the top when it's active.
+    - **Eating**: Consuming food increases your score and triggers the **Growth Event**. Standard food intelligently avoids spawning on top of active bonus food areas.
+    - **Bonus Food**: After reaching a level-specific score threshold, a **3x3 Golden Bonus Food** appears for a limited time. Eating it gives **5x points** and double the normal growth. Hit detection is robust across all 9 cells. A countdown timer will appear at the top when it's active.
+    - **Shadow Obstacles**: After Level 3, hazards appear. They start as "Shadows" (semi-transparent) for 3 seconds. The snake can pass through shadows. If the snake is inside a shadow when it materializes, it remains safe until it exits the wall. However, entering a materialized wall from the outside is fatal. Shadows flicker rapidly as they are about to materialize.
     - **Growth**: The snake grows by a specific number of segments based on your chosen difficulty level.
     - **Speeding Up**: Every 50 points, a **Difficulty Event** occurs, increasing the game speed.
 5.  **Game Over**: If you collide with yourself (or a wall in Standard mode), the game ends. Your high score is saved locally.

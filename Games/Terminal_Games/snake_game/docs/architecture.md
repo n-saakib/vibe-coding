@@ -11,8 +11,8 @@ All configuration: window/screen sizes, colors, difficulty levels, game modes, t
 ### `snake_logic.py`
 Core entities:
 - **`Snake`**: Body list, direction, `command_queue` (input buffering, max 2), `process_queue()`, `prev_body` (for interpolation), `growth_pool`, collision with optional ghost mode.
-- **`Food`**: Random position, spawn avoidance.
-- **`BonusFood`**: 3x3 area collision, timer.
+- **`Food`**: Random position, spawn avoidance (now explicitly avoids the 3x3 `BonusFood` area).
+- **`BonusFood`**: 3x3 area collision (robust absolute-distance check), timer.
 - **`PowerUp`** (F9 branch only, not in combined): Ghost/Snail buffs.
 
 ### `audio.py` (F6 branch only, not in combined)
@@ -26,7 +26,7 @@ Entry point and orchestrator:
 - **JSON Persistence (F3)**: `save_data.json` for high score, total games, golden food count, last mode/level.
 - **Screen Shake & Particles (F4)**: Shake on death/bonus eat; particle bursts on food eat with alpha fading.
 - **Smoothed Movement (F5)**: `prev_body` tracking + wrap-aware lerp interpolation for sub-pixel rendering.
-- **Static Obstacles (F8)**: Multi-cell blocks (2×2 to 4×4) spawn after level 3, reposition on food eat. Bright red fill + white X.
+- **Shadow Obstacles (F8)**: Multi-cell blocks (2×2 to 4×4) spawn with 40% chance after level 3. Features a 3s "Shadow" phase (safe to enter) with flicker warning, followed by materialization with safety windows for overlapping segments.
 - **Cosmetic Themes (F10)**: Classic/Cyberpunk/Forest themes. Cyberpunk has grid lines. Theme select in menu.
 - **Bonus Food Animation (F12)**: Pulsating scale + 3-layer glow halo. Timer turns red and shakes when < 2s.
 
