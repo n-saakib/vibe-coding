@@ -46,35 +46,55 @@ DIFFICULTY_LEVELS = {
         "growth_rate": 1,
         "speed_inc": 0.2,
         "bonus_threshold": 50,
-        "bonus_duration": 10 # seconds
+        "bonus_duration": 10, # seconds
+        "max_fps": 30,
+        "curve_early_step": 30,   # pts per increment in early phase (0-200)
+        "curve_mid_step": 60,     # pts per increment in mid phase (200-500)
+        "curve_late_step": 100    # pts per increment in late phase (500+)
     },
     "Pro": {
         "start_fps": 10,
         "growth_rate": 1,
         "speed_inc": 0.5,
         "bonus_threshold": 80,
-        "bonus_duration": 8
+        "bonus_duration": 8,
+        "max_fps": 35,
+        "curve_early_step": 30,
+        "curve_mid_step": 55,
+        "curve_late_step": 90
     },
     "Pro Max": {
         "start_fps": 15,
         "growth_rate": 2,
         "speed_inc": 0.8,
         "bonus_threshold": 120,
-        "bonus_duration": 7
+        "bonus_duration": 7,
+        "max_fps": 40,
+        "curve_early_step": 25,
+        "curve_mid_step": 50,
+        "curve_late_step": 85
     },
     "Ultra Pro Max": {
         "start_fps": 20,
         "growth_rate": 3,
         "speed_inc": 1.2,
         "bonus_threshold": 200,
-        "bonus_duration": 6
+        "bonus_duration": 6,
+        "max_fps": 50,
+        "curve_early_step": 25,
+        "curve_mid_step": 45,
+        "curve_late_step": 80
     },
     "Ultra Pro Max +": {
         "start_fps": 25,
         "growth_rate": 5,
         "speed_inc": 2.0,
         "bonus_threshold": 300,
-        "bonus_duration": 5
+        "bonus_duration": 5,
+        "max_fps": 60,
+        "curve_early_step": 20,
+        "curve_mid_step": 40,
+        "curve_late_step": 70
     }
 }
 
@@ -86,6 +106,43 @@ DIFFICULTY_SIZE_MAP = {
     "Ultra Pro Max": "Large",
     "Ultra Pro Max +": "Large"
 }
+
+# F2: Dynamic Pacing — phase boundaries
+CURVE_EARLY_LIMIT = 200
+CURVE_MID_LIMIT = 500
+
+
+def calculate_fps(score, level_config):
+    """Calculate target FPS using piecewise curved progression."""
+    base_fps = level_config["start_fps"]
+    speed_inc = level_config["speed_inc"]
+    max_fps = level_config["max_fps"]
+    
+    # Determine how many increments the score has earned
+    increments = 0
+    remaining = score
+    
+    # Early phase
+    early_cap = CURVE_EARLY_LIMIT
+    if remaining > 0:
+        phase_inc = min(remaining, early_cap) // level_config["curve_early_step"]
+        increments += phase_inc
+        remaining -= early_cap
+    
+    # Mid phase
+    if remaining > 0:
+        mid_range = CURVE_MID_LIMIT - CURVE_EARLY_LIMIT
+        phase_inc = min(remaining, mid_range) // level_config["curve_mid_step"]
+        increments += phase_inc
+        remaining -= mid_range
+    
+    # Late phase
+    if remaining > 0:
+        phase_inc = remaining // level_config["curve_late_step"]
+        increments += phase_inc
+    
+    fps = base_fps + increments * speed_inc
+    return min(fps, max_fps)
 
 COLOR_BUTTON = (50, 50, 50)
 COLOR_BUTTON_HOVER = (70, 70, 70)

@@ -271,9 +271,8 @@ def main():
                 score += SCORE_PER_FOOD
                 score_since_last_bonus += SCORE_PER_FOOD
                 
-                # Dynamic difficulty
-                if score % DIFFICULTY_STEP == 0:
-                    fps += level_config["speed_inc"]
+                # Dynamic difficulty — curved progression (F2)
+                fps = calculate_fps(score, level_config)
 
             # Check bonus food consumption (area collision)
             if bonus_food.active and bonus_food.is_hit(snake.body[0]):
