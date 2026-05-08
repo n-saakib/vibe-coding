@@ -3,6 +3,7 @@ import sys
 import os
 import json
 import random
+import math
 from constants import *
 from snake_logic import Snake, Food, BonusFood, set_grid_dimensions
 
@@ -115,6 +116,10 @@ def main():
     fps = INITIAL_FPS
     game_over_processed = False  # Tracks if game-over logic ran
     level = 1  # F8: Track level for obstacle unlock gate
+    # F4: Screen shake & particle state
+    shake_timer = 0.0
+    shake_intensity = 0
+    particles = []
 
     # UI Elements
     btn_width = 250
@@ -168,6 +173,25 @@ def main():
 
     # Initial layout call
     update_layout()
+
+    # F4: Particle spawn helper
+    def spawn_particles(screen_x, screen_y, color, count):
+        nonlocal particles
+        for _ in range(count):
+            if len(particles) >= PARTICLE_MAX_TOTAL:
+                break
+            angle = random.uniform(0, 2 * math.pi)
+            speed = random.uniform(PARTICLE_MIN_SPEED, PARTICLE_MAX_SPEED)
+            life = random.uniform(0.2, PARTICLE_MAX_LIFE)
+            particles.append({
+                "x": screen_x, "y": screen_y,
+                "vx": math.cos(angle) * speed,
+                "vy": math.sin(angle) * speed,
+                "color": color,
+                "life": life,
+                "max_life": life,
+                "size": random.randint(2, 5)
+            })
 
     # F8: Obstacle spawn helper
     def spawn_obstacles():
@@ -280,6 +304,9 @@ def main():
                 fps = level_config["start_fps"]
                 obstacles = []  # F8: Reset obstacles
                 level = 1       # F8: Reset level
+                shake_timer = 0.0  # F4: Reset shake
+                shake_intensity = 0
+                particles = []     # F4: Reset particles
                 current_state = STATE_PLAYING
 
         elif current_state == STATE_PLAYING:
@@ -292,6 +319,12 @@ def main():
             # Check collision
             if snake.check_collision(wall_collision=wall_collision):
                 current_state = STATE_GAME_OVER
+                # F4: Death shake & particles
+                head_screen_x = offset_x + snake.body[0][0] * GRID_SIZE + GRID_SIZE // 2
+                head_screen_y = offset_y + snake.body[0][1] * GRID_SIZE + GRID_SIZE // 2
+                spawn_particles(head_screen_x, head_screen_y, COLOR_FOOD, PARTICLE_COUNT_DEATH)
+                shake_timer = SHAKE_DURATION_DEATH
+                shake_intensity = SHAKE_INTENSITY_DEATH
             
             # F8: Check obstacle collision
             if snake.body[0] in obstacles:
@@ -306,10 +339,16 @@ def main():
             # Check food consumption
             level_config = DIFFICULTY_LEVELS[selected_level]
             if snake.body[0] == food.position:
+                old_food_x, old_food_y = food.position  # F4: save before spawn moves it
                 snake.grow(amount=level_config["growth_rate"])
                 food.spawn(snake.body, bonus_food.position if bonus_food.active else None)
                 score += SCORE_PER_FOOD
                 score_since_last_bonus += SCORE_PER_FOOD
+                
+                # F4: Food eat particles at old position
+                food_screen_x = offset_x + old_food_x * GRID_SIZE + GRID_SIZE // 2
+                food_screen_y = offset_y + old_food_y * GRID_SIZE + GRID_SIZE // 2
+                spawn_particles(food_screen_x, food_screen_y, COLOR_FOOD, PARTICLE_COUNT_FOOD)
                 
                 # F8: Update level and spawn/move obstacles
                 level = score // LEVEL_SCORE_STEP + 1
@@ -325,6 +364,12 @@ def main():
                 bonus_food.active = False
                 score += SCORE_PER_FOOD * BONUS_SCORE_MULTIPLIER
                 save_data["total_golden_food"] = save_data.get("total_golden_food", 0) + 1
+                # F4: Bonus food particles & shake
+                bonus_screen_x = offset_x + bonus_food.position[0] * GRID_SIZE + GRID_SIZE // 2
+                bonus_screen_y = offset_y + bonus_food.position[1] * GRID_SIZE + GRID_SIZE // 2
+                spawn_particles(bonus_screen_x, bonus_screen_y, COLOR_BONUS_FOOD, PARTICLE_COUNT_BONUS)
+                shake_timer = max(shake_timer, SHAKE_DURATION_BONUS)
+                shake_intensity = max(shake_intensity, SHAKE_INTENSITY_BONUS)
 
             # Spawn bonus food
             if not bonus_food.active and score_since_last_bonus >= level_config["bonus_threshold"]:
@@ -350,6 +395,22 @@ def main():
                     high_score = score
                 save_save_data(save_data)
                 game_over_processed = True
+
+        # F4: Shake timer and particle updates (runs for all game-active states)
+        if current_state in (STATE_PLAYING, STATE_PAUSED, STATE_GAME_OVER):
+            if shake_timer > 0:
+                shake_timer -= 1 / max(fps, 1)
+                if shake_timer <= 0:
+                    shake_timer = 0.0
+                    shake_intensity = 0
+            
+            dt = 1.0 / max(fps, 1)
+            for p in particles[:]:
+                p["x"] += p["vx"] * dt
+                p["y"] += p["vy"] * dt
+                p["life"] -= dt
+                if p["life"] <= 0:
+                    particles.remove(p)
 
         # 3. Rendering
         screen.fill(COLOR_BACKGROUND)
@@ -383,18 +444,28 @@ def main():
             start_button.draw(screen)
 
         elif current_state == STATE_PLAYING or current_state == STATE_PAUSED or current_state == STATE_GAME_OVER:
+            # F4: Compute shake offset
+            shake_dx = 0
+            shake_dy = 0
+            if shake_timer > 0:
+                intensity = shake_intensity * (shake_timer / max(SHAKE_DURATION_DEATH, SHAKE_DURATION_BONUS))
+                shake_dx = random.randint(-int(intensity), int(intensity))
+                shake_dy = random.randint(-int(intensity), int(intensity))
+            render_ox = offset_x + shake_dx
+            render_oy = offset_y + shake_dy
+
             # Draw Header Background
             pygame.draw.rect(screen, (50, 50, 50), (0, 0, window_width, UI_HEIGHT))
             pygame.draw.line(screen, COLOR_TEXT, (0, UI_HEIGHT), (window_width, UI_HEIGHT), 2)
 
             # Draw Playable Area Border
-            pygame.draw.rect(screen, (40, 40, 40), (offset_x, offset_y, board_width, board_height))
-            pygame.draw.rect(screen, (100, 100, 100), (offset_x, offset_y, board_width, board_height), 1)
+            pygame.draw.rect(screen, (40, 40, 40), (render_ox, render_oy, board_width, board_height))
+            pygame.draw.rect(screen, (100, 100, 100), (render_ox, render_oy, board_width, board_height), 1)
 
             # F8: Draw obstacles
             for ox, oy in obstacles:
-                obs_rect = pygame.Rect(offset_x + ox * GRID_SIZE,
-                                       offset_y + oy * GRID_SIZE,
+                obs_rect = pygame.Rect(render_ox + ox * GRID_SIZE,
+                                       render_oy + oy * GRID_SIZE,
                                        GRID_SIZE, GRID_SIZE)
                 pygame.draw.rect(screen, OBSTACLE_COLOR, obs_rect)
                 # Draw X pattern for visibility
@@ -407,15 +478,15 @@ def main():
                                  (obs_rect.left + inset, obs_rect.bottom - inset), 2)
 
             # Draw food
-            food_rect = pygame.Rect(offset_x + food.position[0] * GRID_SIZE, 
-                                    offset_y + food.position[1] * GRID_SIZE, 
+            food_rect = pygame.Rect(render_ox + food.position[0] * GRID_SIZE, 
+                                    render_oy + food.position[1] * GRID_SIZE, 
                                     GRID_SIZE, GRID_SIZE)
             pygame.draw.rect(screen, COLOR_FOOD, food_rect)
 
             # Draw bonus food
             if bonus_food.active:
-                bonus_rect = pygame.Rect(offset_x + (bonus_food.position[0] - 1) * GRID_SIZE, 
-                                         offset_y + (bonus_food.position[1] - 1) * GRID_SIZE, 
+                bonus_rect = pygame.Rect(render_ox + (bonus_food.position[0] - 1) * GRID_SIZE, 
+                                         render_oy + (bonus_food.position[1] - 1) * GRID_SIZE, 
                                          GRID_SIZE * 3, GRID_SIZE * 3)
                 pygame.draw.rect(screen, COLOR_BONUS_FOOD, bonus_rect, border_radius=5)
                 pygame.draw.rect(screen, COLOR_TEXT, bonus_rect, 1, border_radius=5)
@@ -423,11 +494,23 @@ def main():
             # Draw snake
             for i, segment in enumerate(snake.body):
                 color = COLOR_SNAKE_HEAD if i == 0 else COLOR_SNAKE_BODY
-                seg_rect = pygame.Rect(offset_x + segment[0] * GRID_SIZE, 
-                                       offset_y + segment[1] * GRID_SIZE, 
+                seg_rect = pygame.Rect(render_ox + segment[0] * GRID_SIZE, 
+                                       render_oy + segment[1] * GRID_SIZE, 
                                        GRID_SIZE, GRID_SIZE)
                 pygame.draw.rect(screen, color, seg_rect)
                 pygame.draw.rect(screen, COLOR_BACKGROUND, seg_rect, 1)
+
+            # F4: Draw particles
+            for p in particles:
+                alpha = int(255 * (p["life"] / p["max_life"]))
+                if alpha <= 0:
+                    continue
+                pcolor = (*p["color"], alpha)
+                psurf = pygame.Surface((p["size"], p["size"]), pygame.SRCALPHA)
+                psurf.fill(pcolor)
+                px = int(p["x"] + shake_dx - p["size"] // 2)
+                py = int(p["y"] + shake_dy - p["size"] // 2)
+                screen.blit(psurf, (px, py))
 
             # Draw UI
             score_surface = font.render(f"Score: {score}", True, COLOR_TEXT)
