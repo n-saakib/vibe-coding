@@ -171,6 +171,71 @@ COLOR_BUTTON_HOVER = (70, 70, 70)
 COLOR_BONUS_FOOD = (255, 215, 0) # Gold
 COLOR_TIMER = (255, 100, 100) # Red-ish
 
+# F10: Cosmetic Themes
+THEMES = {
+    "Classic": {
+        "background": (30, 30, 30),
+        "snake_head": (0, 255, 100),
+        "snake_body": (0, 200, 80),
+        "food": (255, 50, 50),
+        "bonus_food": (255, 215, 0),
+        "text": (255, 255, 255),
+        "button": (50, 50, 50),
+        "button_hover": (70, 70, 70),
+        "board_bg": (40, 40, 40),
+        "board_border": (100, 100, 100),
+        "ui_header": (50, 50, 50),
+        "timer": (255, 100, 100),
+        "has_grid": False,
+        "grid_color": None
+    },
+    "Cyberpunk": {
+        "background": (10, 5, 25),
+        "snake_head": (0, 255, 255),
+        "snake_body": (255, 0, 255),
+        "food": (255, 255, 0),
+        "bonus_food": (0, 255, 255),
+        "text": (0, 255, 200),
+        "button": (20, 10, 40),
+        "button_hover": (40, 20, 80),
+        "board_bg": (15, 8, 35),
+        "board_border": (0, 255, 255),
+        "ui_header": (15, 5, 30),
+        "timer": (255, 50, 255),
+        "has_grid": True,
+        "grid_color": (0, 255, 255, 30)
+    },
+    "Forest": {
+        "background": (20, 40, 20),
+        "snake_head": (100, 200, 50),
+        "snake_body": (60, 150, 30),
+        "food": (200, 100, 50),
+        "bonus_food": (255, 200, 100),
+        "text": (200, 220, 180),
+        "button": (30, 50, 30),
+        "button_hover": (50, 70, 50),
+        "board_bg": (25, 45, 25),
+        "board_border": (80, 120, 60),
+        "ui_header": (25, 35, 25),
+        "timer": (255, 150, 100),
+        "has_grid": False,
+        "grid_color": None
+    }
+}
+
+_current_theme_name = "Classic"
+_current_theme = THEMES["Classic"]
+
+
+def set_theme(name):
+    global _current_theme_name, _current_theme
+    _current_theme_name = name
+    _current_theme = THEMES.get(name, THEMES["Classic"])
+
+
+def get_theme():
+    return _current_theme
+
 # Save Data
 SAVE_DATA_PATH = "save_data.json"
 DEFAULT_SAVE_DATA = {

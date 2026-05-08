@@ -68,6 +68,7 @@ class Button:
 # Game States
 STATE_MODE_SELECT = "MODE_SELECT"
 STATE_LEVEL_SELECT = "LEVEL_SELECT"
+STATE_THEME_SELECT = "THEME_SELECT"  # F10
 STATE_START_SCREEN = "START_SCREEN"
 STATE_PLAYING = "PLAYING"
 STATE_PAUSED = "PAUSED"
@@ -128,12 +129,14 @@ def main():
     btn_width = 250
     mode_buttons = []
     level_buttons = []
+    theme_buttons = []  # F10
     pause_buttons = []
     start_button = None
+    selected_theme = "Classic"  # F10
 
     def update_layout():
         nonlocal window_width, window_height, board_width, board_height, offset_x, offset_y
-        nonlocal mode_buttons, level_buttons, pause_buttons, start_button
+        nonlocal mode_buttons, level_buttons, theme_buttons, pause_buttons, start_button
 
         # 1. Update board dimensions from selected size
         dim = SCREEN_SIZES.get(selected_size_name, 600)
@@ -165,6 +168,11 @@ def main():
         level_buttons = []
         for i, level_name in enumerate(DIFFICULTY_LEVELS.keys()):
             level_buttons.append(Button(center_x, window_height // 4 + i * 60, btn_width, 50, level_name, font))
+        
+        # F10: Theme selection buttons
+        theme_buttons = []
+        for i, theme_name in enumerate(THEMES.keys()):
+            theme_buttons.append(Button(center_x, window_height // 4 + i * 60, btn_width, 50, theme_name, font))
         
         start_btn_w = int(window_width * 0.8)
         start_button = Button(window_width // 2 - start_btn_w // 2, window_height - 100, start_btn_w, 80, "START GAME", large_font)
@@ -295,6 +303,14 @@ def main():
                     GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
                     set_grid_dimensions(GRID_WIDTH, GRID_HEIGHT)
                     update_layout()
+                    current_state = STATE_THEME_SELECT  # F10
+        
+        elif current_state == STATE_THEME_SELECT:
+            for btn in theme_buttons:
+                btn.update(mouse_pos)
+                if btn.is_clicked(mouse_pos, mouse_up):
+                    selected_theme = btn.text
+                    set_theme(selected_theme)
                     current_state = STATE_START_SCREEN
         
         elif current_state == STATE_START_SCREEN:
@@ -423,7 +439,8 @@ def main():
                     particles.remove(p)
 
         # 3. Rendering
-        screen.fill(COLOR_BACKGROUND)
+        tm = get_theme()  # F10
+        screen.fill(tm["background"])
         
         if current_state == STATE_MODE_SELECT:
             title = large_font.render("Select Game Mode", True, COLOR_TEXT)
@@ -435,6 +452,12 @@ def main():
             title = large_font.render("Select Difficulty", True, COLOR_TEXT)
             screen.blit(title, (window_width // 2 - title.get_width() // 2, window_height // 10))
             for btn in level_buttons:
+                btn.draw(screen)
+
+        elif current_state == STATE_THEME_SELECT:
+            title = large_font.render("Select Theme", True, COLOR_TEXT)
+            screen.blit(title, (window_width // 2 - title.get_width() // 2, window_height // 10))
+            for btn in theme_buttons:
                 btn.draw(screen)
 
         elif current_state == STATE_START_SCREEN:
@@ -465,12 +488,22 @@ def main():
             render_oy = offset_y + shake_dy
 
             # Draw Header Background
-            pygame.draw.rect(screen, (50, 50, 50), (0, 0, window_width, UI_HEIGHT))
-            pygame.draw.line(screen, COLOR_TEXT, (0, UI_HEIGHT), (window_width, UI_HEIGHT), 2)
+            pygame.draw.rect(screen, tm["ui_header"], (0, 0, window_width, UI_HEIGHT))
+            pygame.draw.line(screen, tm["text"], (0, UI_HEIGHT), (window_width, UI_HEIGHT), 2)
 
             # Draw Playable Area Border
-            pygame.draw.rect(screen, (40, 40, 40), (render_ox, render_oy, board_width, board_height))
-            pygame.draw.rect(screen, (100, 100, 100), (render_ox, render_oy, board_width, board_height), 1)
+            pygame.draw.rect(screen, tm["board_bg"], (render_ox, render_oy, board_width, board_height))
+            pygame.draw.rect(screen, tm["board_border"], (render_ox, render_oy, board_width, board_height), 1)
+
+            # F10: Cyberpunk grid lines
+            if tm["has_grid"] and tm["grid_color"] is not None:
+                grid_surf = pygame.Surface((board_width, board_height), pygame.SRCALPHA)
+                gc = tm["grid_color"]
+                for gx in range(0, board_width, GRID_SIZE):
+                    pygame.draw.line(grid_surf, gc, (gx, 0), (gx, board_height), 1)
+                for gy in range(0, board_height, GRID_SIZE):
+                    pygame.draw.line(grid_surf, gc, (0, gy), (board_width, gy), 1)
+                screen.blit(grid_surf, (render_ox, render_oy))
 
             # F8: Draw obstacles
             for ox, oy in obstacles:
@@ -491,22 +524,22 @@ def main():
             food_rect = pygame.Rect(render_ox + food.position[0] * GRID_SIZE, 
                                     render_oy + food.position[1] * GRID_SIZE, 
                                     GRID_SIZE, GRID_SIZE)
-            pygame.draw.rect(screen, COLOR_FOOD, food_rect)
+            pygame.draw.rect(screen, tm["food"], food_rect)
 
             # Draw bonus food
             if bonus_food.active:
                 bonus_rect = pygame.Rect(render_ox + (bonus_food.position[0] - 1) * GRID_SIZE, 
                                          render_oy + (bonus_food.position[1] - 1) * GRID_SIZE, 
                                          GRID_SIZE * 3, GRID_SIZE * 3)
-                pygame.draw.rect(screen, COLOR_BONUS_FOOD, bonus_rect, border_radius=5)
-                pygame.draw.rect(screen, COLOR_TEXT, bonus_rect, 1, border_radius=5)
+                pygame.draw.rect(screen, tm["bonus_food"], bonus_rect, border_radius=5)
+                pygame.draw.rect(screen, tm["text"], bonus_rect, 1, border_radius=5)
             
             # Draw snake (F5: interpolated positions)
             prev = snake.prev_body
             curr = snake.body
             wrap = (selected_mode == MODE_WRAP_AROUND) if selected_mode else False
             for i, segment in enumerate(curr):
-                color = COLOR_SNAKE_HEAD if i == 0 else COLOR_SNAKE_BODY
+                color = tm["snake_head"] if i == 0 else tm["snake_body"]
                 # Get prev position (handle length mismatch)
                 if i < len(prev):
                     px, py = prev[i]
@@ -530,7 +563,7 @@ def main():
                 seg_rect = pygame.Rect(int(render_ox + rx), int(render_oy + ry),
                                        GRID_SIZE, GRID_SIZE)
                 pygame.draw.rect(screen, color, seg_rect)
-                pygame.draw.rect(screen, COLOR_BACKGROUND, seg_rect, 1)
+                pygame.draw.rect(screen, tm["background"], seg_rect, 1)
 
             # F4: Draw particles
             for p in particles:
@@ -545,9 +578,9 @@ def main():
                 screen.blit(psurf, (px, py))
 
             # Draw UI
-            score_surface = font.render(f"Score: {score}", True, COLOR_TEXT)
-            high_score_surface = font.render(f"High Score: {high_score}", True, COLOR_TEXT)
-            level_surface = font.render(f"Level: {selected_level}", True, COLOR_TEXT)
+            score_surface = font.render(f"Score: {score}", True, tm["text"])
+            high_score_surface = font.render(f"High Score: {high_score}", True, tm["text"])
+            level_surface = font.render(f"Level: {selected_level}", True, tm["text"])
             
             screen.blit(score_surface, (10, 10))
             screen.blit(high_score_surface, (window_width - high_score_surface.get_width() - 10, 10))
@@ -556,7 +589,7 @@ def main():
             # Draw Bonus Timer
             if bonus_food.active:
                 timer_text = f"BONUS: {max(0, int(bonus_food.timer + 1))}s"
-                timer_surf = font.render(timer_text, True, COLOR_TIMER)
+                timer_surf = font.render(timer_text, True, tm["timer"])
                 screen.blit(timer_surf, (window_width // 2 - timer_surf.get_width() // 2, UI_HEIGHT - 35))
 
             if current_state == STATE_PAUSED:
@@ -574,9 +607,9 @@ def main():
                 overlay.fill((0, 0, 0, 150))
                 screen.blit(overlay, (0, 0))
 
-                over_surface = large_font.render("GAME OVER", True, COLOR_FOOD)
-                restart_surface = font.render("Press R to Restart", True, COLOR_TEXT)
-                final_score_surface = font.render(f"Final Score: {score}", True, COLOR_TEXT)
+                over_surface = large_font.render("GAME OVER", True, tm["food"])
+                restart_surface = font.render("Press R to Restart", True, tm["text"])
+                final_score_surface = font.render(f"Final Score: {score}", True, tm["text"])
                 
                 mid_y = window_height // 2
                 over_rect = over_surface.get_rect(center=(window_width // 2, mid_y - 40))
