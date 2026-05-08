@@ -173,19 +173,31 @@ def main():
     def spawn_obstacles():
         nonlocal obstacles
         obstacles = []
+        # Obstacle size scales with board (min 2x2 cells)
+        obs_cells = max(OBSTACLE_MIN_CELLS, GRID_WIDTH // 20)
         count = random.randint(OBSTACLE_COUNT_MIN, OBSTACLE_COUNT_MAX)
         for _ in range(count):
             attempts = 0
             while attempts < 200:
-                ox = random.randint(0, GRID_WIDTH - 1)
-                oy = random.randint(0, GRID_HEIGHT - 1)
-                pos = (ox, oy)
-                # Don't spawn on snake, food, bonus food, or existing obstacles
-                if pos not in snake.body and pos != food.position:
-                    if not bonus_food.active or not bonus_food.is_hit(pos):
-                        if pos not in obstacles:
-                            obstacles.append(pos)
-                            break
+                # Pick top-left corner ensuring the block fits
+                ox = random.randint(0, GRID_WIDTH - obs_cells)
+                oy = random.randint(0, GRID_HEIGHT - obs_cells)
+                # Check all cells in the block
+                block_cells = [(ox + dx, oy + dy) for dx in range(obs_cells) for dy in range(obs_cells)]
+                overlap = False
+                for cell in block_cells:
+                    if cell in snake.body or cell == food.position:
+                        overlap = True
+                        break
+                    if bonus_food.active and bonus_food.is_hit(cell):
+                        overlap = True
+                        break
+                    if cell in obstacles:
+                        overlap = True
+                        break
+                if not overlap:
+                    obstacles.extend(block_cells)
+                    break
                 attempts += 1
 
     while True:
@@ -386,11 +398,11 @@ def main():
                                        GRID_SIZE, GRID_SIZE)
                 pygame.draw.rect(screen, OBSTACLE_COLOR, obs_rect)
                 # Draw X pattern for visibility
-                inset = 2
-                pygame.draw.line(screen, (60, 15, 15), 
+                inset = 3
+                pygame.draw.line(screen, OBSTACLE_X_COLOR, 
                                  (obs_rect.left + inset, obs_rect.top + inset),
                                  (obs_rect.right - inset, obs_rect.bottom - inset), 2)
-                pygame.draw.line(screen, (60, 15, 15),
+                pygame.draw.line(screen, OBSTACLE_X_COLOR,
                                  (obs_rect.right - inset, obs_rect.top + inset),
                                  (obs_rect.left + inset, obs_rect.bottom - inset), 2)
 

@@ -146,10 +146,12 @@ def calculate_fps(score, level_config):
 
 # F8: Static Obstacles
 LEVEL_SCORE_STEP = 100  # Points per level
-OBSTACLE_COLOR = (100, 30, 30)
+OBSTACLE_COLOR = (200, 55, 55)  # Bright brick-red, visible on dark bg
+OBSTACLE_X_COLOR = (255, 255, 255)  # White X pattern for contrast
 OBSTACLE_COUNT_MIN = 1
 OBSTACLE_COUNT_MAX = 3
 OBSTACLE_UNLOCK_LEVEL = 3
+OBSTACLE_MIN_CELLS = 2  # Minimum obstacle width/height in grid cells
 
 COLOR_BUTTON = (50, 50, 50)
 COLOR_BUTTON_HOVER = (70, 70, 70)
