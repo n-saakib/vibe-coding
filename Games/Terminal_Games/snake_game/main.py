@@ -369,22 +369,23 @@ def main():
             
             # F8: Update obstacles and check collision
             dt = 1.0 / max(fps, 1)
-            for obs in obstacles:
+            for obs in obstacles[:]: # Use slice to allow removal
+                obs["timer"] -= dt
+                
                 if obs["state"] == "SHADOW":
-                    obs["timer"] -= dt
                     if obs["timer"] <= 0:
                         obs["state"] = "MATERIALIZED"
+                        obs["timer"] = OBSTACLE_LIFETIME # Reset timer for materialized phase
                         # When it materializes, capture any segments currently in it as "safe"
                         obs["safe_segments"] = [seg for seg in snake.body if seg in obs["cells"]]
                 
-                # Check collision if materialized
-                if obs["state"] == "MATERIALIZED":
+                elif obs["state"] == "MATERIALIZED":
+                    if obs["timer"] <= 0:
+                        obstacles.remove(obs)
+                        continue
+                        
                     head = snake.body[0]
                     if head in obs["cells"]:
-                        # If head is in the wall, check if it was already "safe"
-                        # But wait: "if the head collides with the wall again, it should die"
-                        # This means if the head ENTERS the wall while materialized, it dies.
-                        # If the head is ALREADY in the wall when it materializes, it's safe until it leaves.
                         if head not in obs["safe_segments"]:
                             current_state = STATE_GAME_OVER
                     
@@ -548,6 +549,9 @@ def main():
                         continue # Skip drawing this frame to flicker
                     color = OBSTACLE_SHADOW_COLOR
                 else:
+                    # Flickering effect when close to disappearing (< 1.5s)
+                    if obs["timer"] < 1.5 and int(pygame.time.get_ticks() / 150) % 2 == 0:
+                        continue
                     color = OBSTACLE_COLOR
 
                 for ox, oy in obs["cells"]:
