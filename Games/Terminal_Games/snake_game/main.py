@@ -526,11 +526,25 @@ def main():
                                     GRID_SIZE, GRID_SIZE)
             pygame.draw.rect(screen, tm["food"], food_rect)
 
-            # Draw bonus food
+            # Draw bonus food (F12: pulse + glow)
             if bonus_food.active:
-                bonus_rect = pygame.Rect(render_ox + (bonus_food.position[0] - 1) * GRID_SIZE, 
-                                         render_oy + (bonus_food.position[1] - 1) * GRID_SIZE, 
-                                         GRID_SIZE * 3, GRID_SIZE * 3)
+                base_size = GRID_SIZE * 3
+                pulse = 1.0 + BONUS_PULSE_AMPLITUDE * math.sin(pygame.time.get_ticks() / 1000.0 * BONUS_PULSE_SPEED * 2 * math.pi)
+                pulse_size = int(base_size * pulse)
+                cx = render_ox + bonus_food.position[0] * GRID_SIZE + GRID_SIZE // 2
+                cy = render_oy + bonus_food.position[1] * GRID_SIZE + GRID_SIZE // 2
+                
+                # Glow layers
+                for layer in range(BONUS_GLOW_LAYERS, 0, -1):
+                    alpha = max(0, 255 - BONUS_GLOW_ALPHA_STEP * layer)
+                    glow_size = int(pulse_size + layer * 6)
+                    glow_surf = pygame.Surface((glow_size, glow_size), pygame.SRCALPHA)
+                    glow_color = (*tm["bonus_food"], alpha)
+                    glow_surf.fill(glow_color)
+                    screen.blit(glow_surf, (cx - glow_size // 2, cy - glow_size // 2))
+                
+                bonus_rect = pygame.Rect(cx - pulse_size // 2, cy - pulse_size // 2,
+                                         pulse_size, pulse_size)
                 pygame.draw.rect(screen, tm["bonus_food"], bonus_rect, border_radius=5)
                 pygame.draw.rect(screen, tm["text"], bonus_rect, 1, border_radius=5)
             
@@ -586,11 +600,19 @@ def main():
             screen.blit(high_score_surface, (window_width - high_score_surface.get_width() - 10, 10))
             screen.blit(level_surface, (window_width // 2 - level_surface.get_width() // 2, 10))
 
-            # Draw Bonus Timer
+            # Draw Bonus Timer (F12: urgent color + shake)
             if bonus_food.active:
-                timer_text = f"BONUS: {max(0, int(bonus_food.timer + 1))}s"
-                timer_surf = font.render(timer_text, True, tm["timer"])
-                screen.blit(timer_surf, (window_width // 2 - timer_surf.get_width() // 2, UI_HEIGHT - 35))
+                remaining = max(0, int(bonus_food.timer + 1))
+                timer_text = f"BONUS: {remaining}s"
+                is_urgent = bonus_food.timer <= BONUS_URGENT_THRESHOLD
+                timer_color = COLOR_TIMER_URGENT if is_urgent else tm["timer"]
+                timer_surf = font.render(timer_text, True, timer_color)
+                tx = window_width // 2 - timer_surf.get_width() // 2
+                ty = UI_HEIGHT - 35
+                if is_urgent:
+                    tx += random.randint(-BONUS_SHAKE_INTENSITY, BONUS_SHAKE_INTENSITY)
+                    ty += random.randint(-BONUS_SHAKE_INTENSITY // 2, BONUS_SHAKE_INTENSITY // 2)
+                screen.blit(timer_surf, (tx, ty))
 
             if current_state == STATE_PAUSED:
                 overlay = pygame.Surface((window_width, window_height), pygame.SRCALPHA)
