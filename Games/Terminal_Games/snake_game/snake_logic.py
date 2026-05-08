@@ -118,7 +118,9 @@ class BonusFood(Food):
         self.active = True
 
     def is_hit(self, head_pos):
-        # Check if head is within the 3x3 area centered at self.position
+        # Check if head is within the size x size area centered at self.position
         hx, hy = head_pos
         px, py = self.position
-        return px - 1 <= hx <= px + 1 and py - 1 <= hy <= py + 1
+        # Use absolute difference with size // 2 to ensure we cover the full area
+        half = self.size // 2
+        return abs(int(hx) - int(px)) <= half and abs(int(hy) - int(py)) <= half
