@@ -82,3 +82,13 @@ COLOR_BUTTON = (50, 50, 50)
 COLOR_BUTTON_HOVER = (70, 70, 70)
 COLOR_BONUS_FOOD = (255, 215, 0) # Gold
 COLOR_TIMER = (255, 100, 100) # Red-ish
+
+# Save Data
+SAVE_DATA_PATH = "save_data.json"
+DEFAULT_SAVE_DATA = {
+    "high_score": 0,
+    "total_games": 0,
+    "total_golden_food": 0,
+    "last_mode": None,
+    "last_level": None
+}

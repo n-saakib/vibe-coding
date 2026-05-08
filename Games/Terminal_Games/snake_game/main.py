@@ -1,21 +1,43 @@
 import pygame
 import sys
 import os
+import json
 from constants import *
 from snake_logic import Snake, Food, BonusFood, set_grid_dimensions
 
-def load_high_score():
-    if os.path.exists("highscore.txt"):
-        with open("highscore.txt", "r") as f:
-            try:
-                return int(f.read())
-            except ValueError:
-                return 0
-    return 0
+def load_save_data():
+    """Load save data from JSON file, merging with defaults. Returns a dict."""
+    save_data = dict(DEFAULT_SAVE_DATA)
+    if os.path.exists(SAVE_DATA_PATH):
+        try:
+            with open(SAVE_DATA_PATH, "r") as f:
+                loaded = json.load(f)
+            # Merge loaded data into defaults (in case new fields were added)
+            for key in DEFAULT_SAVE_DATA:
+                if key in loaded:
+                    save_data[key] = loaded[key]
+        except (json.JSONDecodeError, ValueError):
+            pass  # Corrupted file — use defaults
+    
+    # Migration: if highscore.txt exists and JSON high_score is 0, import it
+    if save_data["high_score"] == 0 and os.path.exists("highscore.txt"):
+        try:
+            with open("highscore.txt", "r") as f:
+                legacy_score = int(f.read().strip())
+            save_data["high_score"] = legacy_score
+            save_save_data(save_data)
+        except (ValueError, OSError):
+            pass
+    
+    return save_data
 
-def save_high_score(score):
-    with open("highscore.txt", "w") as f:
-        f.write(str(score))
+def save_save_data(save_data):
+    """Write save data dict to JSON file."""
+    try:
+        with open(SAVE_DATA_PATH, "w") as f:
+            json.dump(save_data, f, indent=4)
+    except OSError:
+        pass  # Silently fail if we can't write
 
 class Button:
     def __init__(self, x, y, width, height, text, font, color=COLOR_BUTTON, hover_color=COLOR_BUTTON_HOVER):
@@ -67,11 +89,14 @@ def main():
     font = pygame.font.SysFont("Arial", 24)
     large_font = pygame.font.SysFont("Arial", 48)
 
+    # Load persistent save data
+    save_data = load_save_data()
+
     # Game State Variables
     current_state = STATE_SIZE_SELECT
     selected_size_name = "Medium" # Default for initial layout
-    selected_mode = None
-    selected_level = None
+    selected_mode = save_data.get("last_mode")
+    selected_level = save_data.get("last_level")
 
     # Board pixel dimensions (SCREEN_WIDTH/HEIGHT renamed conceptually)
     board_width = SCREEN_WIDTH
@@ -85,9 +110,9 @@ def main():
     bonus_food = None
     score = 0
     score_since_last_bonus = 0
-    high_score = load_high_score()
+    high_score = save_data["high_score"]
     fps = INITIAL_FPS
-    high_score_saved = False
+    game_over_processed = False  # Renamed from high_score_saved — tracks if game-over logic ran
 
     # UI Elements
     btn_width = 250
@@ -184,7 +209,7 @@ def main():
                 elif current_state == STATE_GAME_OVER:
                     if event.key == pygame.K_r:
                         current_state = STATE_SIZE_SELECT
-                        high_score_saved = False
+                        game_over_processed = False
 
         # 2. Update Logic
         if current_state == STATE_SIZE_SELECT:
@@ -208,6 +233,8 @@ def main():
                 btn.update(mouse_pos)
                 if btn.is_clicked(mouse_pos, mouse_up):
                     selected_mode = btn.text
+                    save_data["last_mode"] = selected_mode
+                    save_save_data(save_data)
                     current_state = STATE_LEVEL_SELECT
         
         elif current_state == STATE_LEVEL_SELECT:
@@ -215,6 +242,8 @@ def main():
                 btn.update(mouse_pos)
                 if btn.is_clicked(mouse_pos, mouse_up):
                     selected_level = btn.text
+                    save_data["last_level"] = selected_level
+                    save_save_data(save_data)
                     current_state = STATE_START_SCREEN
         
         elif current_state == STATE_START_SCREEN:
@@ -227,7 +256,7 @@ def main():
                 bonus_food.active = False
                 score = 0
                 score_since_last_bonus = 0
-                high_score = load_high_score()
+                high_score = save_data["high_score"]
                 level_config = DIFFICULTY_LEVELS[selected_level]
                 fps = level_config["start_fps"]
                 current_state = STATE_PLAYING
@@ -265,6 +294,7 @@ def main():
                 snake.grow(amount=level_config["growth_rate"] * 2) # Extra growth for bonus
                 bonus_food.active = False
                 score += SCORE_PER_FOOD * BONUS_SCORE_MULTIPLIER
+                save_data["total_golden_food"] = save_data.get("total_golden_food", 0) + 1
 
             # Spawn bonus food
             if not bonus_food.active and score_since_last_bonus >= level_config["bonus_threshold"]:
@@ -280,14 +310,16 @@ def main():
                         current_state = STATE_PLAYING
                     elif btn.text == "QUIT TO MENU":
                         current_state = STATE_MODE_SELECT
-                        high_score_saved = False
+                        game_over_processed = False
         
         elif current_state == STATE_GAME_OVER:
-            if not high_score_saved:
-                if score > high_score:
-                    save_high_score(score)
+            if not game_over_processed:
+                save_data["total_games"] = save_data.get("total_games", 0) + 1
+                if score > save_data["high_score"]:
+                    save_data["high_score"] = score
                     high_score = score
-                high_score_saved = True
+                save_save_data(save_data)
+                game_over_processed = True
 
         # 3. Rendering
         screen.fill(COLOR_BACKGROUND)
