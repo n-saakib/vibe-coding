@@ -542,7 +542,14 @@ def main():
 
             # F8: Draw obstacles
             for obs in obstacles:
-                color = OBSTACLE_COLOR if obs["state"] == "MATERIALIZED" else OBSTACLE_SHADOW_COLOR
+                if obs["state"] == "SHADOW":
+                    # Flickering effect when close to materializing (< 1.0s)
+                    if obs["timer"] < 1.0 and int(pygame.time.get_ticks() / 100) % 2 == 0:
+                        continue # Skip drawing this frame to flicker
+                    color = OBSTACLE_SHADOW_COLOR
+                else:
+                    color = OBSTACLE_COLOR
+
                 for ox, oy in obs["cells"]:
                     obs_rect = pygame.Rect(render_ox + ox * GRID_SIZE,
                                            render_oy + oy * GRID_SIZE,
