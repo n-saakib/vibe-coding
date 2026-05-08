@@ -1,64 +1,41 @@
-# Snake Game Architecture
+# Snake Game Architecture (Combined Build)
 
 ## Overview
-A classic Snake game built with Python and Pygame. The game follows a simple grid-based movement system with dynamic difficulty and persistence.
+A classic Snake game built with Python and Pygame, featuring input buffering, dynamic difficulty pacing, JSON persistence, screen shake & particle effects, smoothed movement interpolation, cosmetic themes, adaptive board sizing, static obstacles, and animated bonus food.
 
-## Components
+## Files
 
-### 1. `constants.py`
-Contains all configuration values such as screen dimensions, grid size, colors, and initial game settings. It also defines:
-- **`GAME_MODES`**: Defines the "Standard" and "Wrap Around" logic types.
-- **`DIFFICULTY_LEVELS`**: A configuration dictionary that maps level names to their specific `start_fps`, `growth_rate`, and `speed_inc` values.
+### `constants.py`
+All configuration: window/screen sizes, colors, difficulty levels, game modes, theme presets (Classic/Cyberpunk/Forest), obstacle/power-up config, shake/particle config, bonus food animation config, and save data defaults.
 
-### 2. `snake_logic.py`
-Encapsulates the core game entities:
-- **`set_grid_dimensions(width, height)`**: A utility function that updates the global grid dimensions, allowing the game to scale across different screen sizes.
-- **`Snake` Class**: 
-    - Maintains a list of coordinates representing its body.
-    - **`move(wrap_around)`**: Handles movement logic, with optional modulo arithmetic for wrapping around screen boundaries.
-    - **`check_collision(wall_collision)`**: Checks for self-collision and, optionally, boundary collision.
-    - **`growth_pool`**: An integer-based growth system allowing for multiple segments to be added incrementally over several moves.
-- **`Food` Class**:
-    - Manages its random position on the grid.
-    - Ensures it doesn't spawn on the snake's body.
-- **`BonusFood` Class**:
-    - Inherits from `Food`.
-    - **Area Collision**: Occupies a 3x3 grid area. `is_hit(head_pos)` checks if the snake's head enters any part of this 9-cell block.
-    - **Timer**: Managed in the game loop; the bonus food disappears if the timer expires.
+### `snake_logic.py`
+Core entities:
+- **`Snake`**: Body list, direction, `command_queue` (input buffering, max 2), `process_queue()`, `prev_body` (for interpolation), `growth_pool`, collision with optional ghost mode.
+- **`Food`**: Random position, spawn avoidance.
+- **`BonusFood`**: 3x3 area collision, timer.
+- **`PowerUp`** (F9 branch only, not in combined): Ghost/Snail buffs.
 
-### 3. `main.py`
-The entry point and orchestrator:
-- **Initialization**: Sets up Pygame with a resizable window (`pygame.RESIZABLE`).
-- **`Button` Class**: A UI helper that is dynamically repositioned when the window is resized to ensure interactive areas match the visuals.
-- **Layout Management**:
-    - **`update_layout()`**: A central function that calculates board dimensions, enforces minimum window sizes (with buffers), and centers the board within the window using `offset_x` and `offset_y`.
-- **State Machine**: Orchestrates the game flow through seven distinct states:
-    1. `STATE_SIZE_SELECT`: Choose the game board size (Small, Medium, Large).
-    2. `STATE_MODE_SELECT`: Choose between Standard and Wrap Around.
-    3. `STATE_LEVEL_SELECT`: Choose the difficulty level.
-    4. `STATE_START_SCREEN`: Confirmation screen showing selected settings.
-    5. `STATE_PLAYING`: The active game loop using the chosen configurations.
-    6. `STATE_PAUSED`: Suspends the game loop and displays a menu.
-    7. `STATE_GAME_OVER`: Displays the final score and allows returning to the main menu.
-- **Game Loop**:
-    - **Input Handling**: Translates key presses, mouse clicks, and handles `VIDEORESIZE` events.
-    - **Update Logic**: Moves the snake, checks collisions, and handles score-based speed scaling.
-    - **Rendering**: Uses `offset_x` and `offset_y` to center all game objects (Snake, Food, Bonus Food) within the window. Draws a visual border to define the playable area.
+### `audio.py` (F6 branch only, not in combined)
+Procedural sound generation — not included in combined build.
+
+### `main.py`
+Entry point and orchestrator:
+- **State Machine** (8 states): Mode Select → Level Select → Theme Select → Start Screen → Playing → Paused → Game Over. Board size auto-derived from difficulty (F11).
+- **Input Buffering (F1)**: Arrow keys enqueue to `command_queue`; one command processed per tick.
+- **Dynamic Pacing (F2)**: `calculate_fps()` — piecewise curved speed progression with per-difficulty max FPS caps.
+- **JSON Persistence (F3)**: `save_data.json` for high score, total games, golden food count, last mode/level.
+- **Screen Shake & Particles (F4)**: Shake on death/bonus eat; particle bursts on food eat with alpha fading.
+- **Smoothed Movement (F5)**: `prev_body` tracking + wrap-aware lerp interpolation for sub-pixel rendering.
+- **Static Obstacles (F8)**: Multi-cell blocks (2×2 to 4×4) spawn after level 3, reposition on food eat. Bright red fill + white X.
+- **Cosmetic Themes (F10)**: Classic/Cyberpunk/Forest themes. Cyberpunk has grid lines. Theme select in menu.
+- **Bonus Food Animation (F12)**: Pulsating scale + 3-layer glow halo. Timer turns red and shakes when < 2s.
 
 ## Data Flow
-1. **Setup**: User selects Board Size, Mode, and Level via the UI buttons.
-2. **Configuration**: `update_layout()` is called to set the initial rendering offsets and window size.
-3. **Input**: User presses an arrow key or resizes the window.
-4. **Layout Update**: If the window is resized, `update_layout()` recalculates offsets and button positions.
-5. **Movement**: `Snake.move()` updates coordinates based on the current grid dimensions.
-6. **Collision Check**: `main.py` checks for wall or self-collision using the logical grid bounds.
-7. **Render**: The game state is rendered to the screen, applying `offset_x` and `offset_y` to all grid-based coordinates to ensure the board remains centered.
-
-## Sizing and Scaling
-- **Window Size**: Decoupled from the game board. The window can be manually resized, but it will always stay larger than the board plus a `WINDOW_MIN_BUFFER`.
-- **UI Constraints**: A `MIN_UI_WIDTH` ensures that header text (Score, High Score, Level) never overlaps.
-- **Board Centering**: The board is dynamically centered in the space below the fixed-height UI header.
+1. User selects Mode → Level → Theme via buttons.
+2. Board size auto-derived from difficulty (`DIFFICULTY_SIZE_MAP`).
+3. Game loop: input → process queue → move (prev_body saved) → collision checks (walls, self, obstacles) → food/bonus/power-up consumption → speed curve recalculation → shake/particle updates → render with interpolation + shake offset + theme colors.
+4. Game over: save stats to JSON, shake+particle effects decay naturally.
 
 ## Persistence
-- High score is stored in `highscore.txt` as a single integer.
-- Read on startup, updated on Game Over if the current score exceeds it.
+- `save_data.json`: `high_score`, `total_games`, `total_golden_food`, `last_mode`, `last_level`.
+- Migration from legacy `highscore.txt` on first run.
