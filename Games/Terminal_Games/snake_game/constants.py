@@ -144,6 +144,13 @@ def calculate_fps(score, level_config):
     fps = base_fps + increments * speed_inc
     return min(fps, max_fps)
 
+# F8: Static Obstacles
+LEVEL_SCORE_STEP = 100  # Points per level
+OBSTACLE_COLOR = (100, 30, 30)
+OBSTACLE_COUNT_MIN = 1
+OBSTACLE_COUNT_MAX = 3
+OBSTACLE_UNLOCK_LEVEL = 3
+
 COLOR_BUTTON = (50, 50, 50)
 COLOR_BUTTON_HOVER = (70, 70, 70)
 COLOR_BONUS_FOOD = (255, 215, 0) # Gold

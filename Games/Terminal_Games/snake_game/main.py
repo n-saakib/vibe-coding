@@ -2,6 +2,7 @@ import pygame
 import sys
 import os
 import json
+import random
 from constants import *
 from snake_logic import Snake, Food, BonusFood, set_grid_dimensions
 
@@ -107,11 +108,13 @@ def main():
     snake = None
     food = None
     bonus_food = None
+    obstacles = []  # F8: Static obstacle positions
     score = 0
     score_since_last_bonus = 0
     high_score = save_data["high_score"]
     fps = INITIAL_FPS
-    game_over_processed = False  # Renamed from high_score_saved — tracks if game-over logic ran
+    game_over_processed = False  # Tracks if game-over logic ran
+    level = 1  # F8: Track level for obstacle unlock gate
 
     # UI Elements
     btn_width = 250
@@ -165,6 +168,25 @@ def main():
 
     # Initial layout call
     update_layout()
+
+    # F8: Obstacle spawn helper
+    def spawn_obstacles():
+        nonlocal obstacles
+        obstacles = []
+        count = random.randint(OBSTACLE_COUNT_MIN, OBSTACLE_COUNT_MAX)
+        for _ in range(count):
+            attempts = 0
+            while attempts < 200:
+                ox = random.randint(0, GRID_WIDTH - 1)
+                oy = random.randint(0, GRID_HEIGHT - 1)
+                pos = (ox, oy)
+                # Don't spawn on snake, food, bonus food, or existing obstacles
+                if pos not in snake.body and pos != food.position:
+                    if not bonus_food.active or not bonus_food.is_hit(pos):
+                        if pos not in obstacles:
+                            obstacles.append(pos)
+                            break
+                attempts += 1
 
     while True:
         mouse_pos = pygame.mouse.get_pos()
@@ -244,6 +266,8 @@ def main():
                 high_score = save_data["high_score"]
                 level_config = DIFFICULTY_LEVELS[selected_level]
                 fps = level_config["start_fps"]
+                obstacles = []  # F8: Reset obstacles
+                level = 1       # F8: Reset level
                 current_state = STATE_PLAYING
 
         elif current_state == STATE_PLAYING:
@@ -255,6 +279,10 @@ def main():
             
             # Check collision
             if snake.check_collision(wall_collision=wall_collision):
+                current_state = STATE_GAME_OVER
+            
+            # F8: Check obstacle collision
+            if snake.body[0] in obstacles:
                 current_state = STATE_GAME_OVER
             
             # Update timers
@@ -270,6 +298,11 @@ def main():
                 food.spawn(snake.body, bonus_food.position if bonus_food.active else None)
                 score += SCORE_PER_FOOD
                 score_since_last_bonus += SCORE_PER_FOOD
+                
+                # F8: Update level and spawn/move obstacles
+                level = score // LEVEL_SCORE_STEP + 1
+                if level >= OBSTACLE_UNLOCK_LEVEL:
+                    spawn_obstacles()
                 
                 # Dynamic difficulty — curved progression (F2)
                 fps = calculate_fps(score, level_config)
@@ -345,6 +378,21 @@ def main():
             # Draw Playable Area Border
             pygame.draw.rect(screen, (40, 40, 40), (offset_x, offset_y, board_width, board_height))
             pygame.draw.rect(screen, (100, 100, 100), (offset_x, offset_y, board_width, board_height), 1)
+
+            # F8: Draw obstacles
+            for ox, oy in obstacles:
+                obs_rect = pygame.Rect(offset_x + ox * GRID_SIZE,
+                                       offset_y + oy * GRID_SIZE,
+                                       GRID_SIZE, GRID_SIZE)
+                pygame.draw.rect(screen, OBSTACLE_COLOR, obs_rect)
+                # Draw X pattern for visibility
+                inset = 2
+                pygame.draw.line(screen, (60, 15, 15), 
+                                 (obs_rect.left + inset, obs_rect.top + inset),
+                                 (obs_rect.right - inset, obs_rect.bottom - inset), 2)
+                pygame.draw.line(screen, (60, 15, 15),
+                                 (obs_rect.right - inset, obs_rect.top + inset),
+                                 (obs_rect.left + inset, obs_rect.bottom - inset), 2)
 
             # Draw food
             food_rect = pygame.Rect(offset_x + food.position[0] * GRID_SIZE, 
