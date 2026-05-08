@@ -64,7 +64,6 @@ class Button:
         return self.is_hovered and mouse_up
 
 # Game States
-STATE_SIZE_SELECT = "SIZE_SELECT"
 STATE_MODE_SELECT = "MODE_SELECT"
 STATE_LEVEL_SELECT = "LEVEL_SELECT"
 STATE_START_SCREEN = "START_SCREEN"
@@ -93,7 +92,7 @@ def main():
     save_data = load_save_data()
 
     # Game State Variables
-    current_state = STATE_SIZE_SELECT
+    current_state = STATE_MODE_SELECT
     selected_size_name = "Medium" # Default for initial layout
     selected_mode = save_data.get("last_mode")
     selected_level = save_data.get("last_level")
@@ -116,7 +115,6 @@ def main():
 
     # UI Elements
     btn_width = 250
-    size_buttons = []
     mode_buttons = []
     level_buttons = []
     pause_buttons = []
@@ -124,7 +122,7 @@ def main():
 
     def update_layout():
         nonlocal window_width, window_height, board_width, board_height, offset_x, offset_y
-        nonlocal size_buttons, mode_buttons, level_buttons, pause_buttons, start_button
+        nonlocal mode_buttons, level_buttons, pause_buttons, start_button
 
         # 1. Update board dimensions from selected size
         dim = SCREEN_SIZES.get(selected_size_name, 600)
@@ -147,12 +145,6 @@ def main():
         # 4. Re-calculate button positions
         center_x = window_width // 2 - btn_width // 2
         y_start = window_height // 3
-        
-        size_buttons = [
-            Button(center_x, y_start, btn_width, 50, "Small", font),
-            Button(center_x, y_start + 70, btn_width, 50, "Medium", font),
-            Button(center_x, y_start + 140, btn_width, 50, "Large", font)
-        ]
 
         mode_buttons = [
             Button(center_x, y_start, btn_width, 50, MODE_WALL_COLLISION, font),
@@ -208,27 +200,11 @@ def main():
                         current_state = STATE_PLAYING
                 elif current_state == STATE_GAME_OVER:
                     if event.key == pygame.K_r:
-                        current_state = STATE_SIZE_SELECT
+                        current_state = STATE_MODE_SELECT
                         game_over_processed = False
 
         # 2. Update Logic
-        if current_state == STATE_SIZE_SELECT:
-            for btn in size_buttons:
-                btn.update(mouse_pos)
-                if btn.is_clicked(mouse_pos, mouse_up):
-                    selected_size_name = btn.text
-                    dim = SCREEN_SIZES[selected_size_name]
-                    SCREEN_WIDTH = dim
-                    SCREEN_HEIGHT = dim
-                    GRID_WIDTH = SCREEN_WIDTH // GRID_SIZE
-                    GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
-                    
-                    # Update snake_logic grid dimensions
-                    set_grid_dimensions(GRID_WIDTH, GRID_HEIGHT)
-                    update_layout()
-                    current_state = STATE_MODE_SELECT
-
-        elif current_state == STATE_MODE_SELECT:
+        if current_state == STATE_MODE_SELECT:
             for btn in mode_buttons:
                 btn.update(mouse_pos)
                 if btn.is_clicked(mouse_pos, mouse_up):
@@ -244,6 +220,15 @@ def main():
                     selected_level = btn.text
                     save_data["last_level"] = selected_level
                     save_save_data(save_data)
+                    # Derive board size from difficulty (F11)
+                    selected_size_name = DIFFICULTY_SIZE_MAP.get(selected_level, "Medium")
+                    dim = SCREEN_SIZES[selected_size_name]
+                    SCREEN_WIDTH = dim
+                    SCREEN_HEIGHT = dim
+                    GRID_WIDTH = SCREEN_WIDTH // GRID_SIZE
+                    GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
+                    set_grid_dimensions(GRID_WIDTH, GRID_HEIGHT)
+                    update_layout()
                     current_state = STATE_START_SCREEN
         
         elif current_state == STATE_START_SCREEN:
@@ -324,13 +309,7 @@ def main():
         # 3. Rendering
         screen.fill(COLOR_BACKGROUND)
         
-        if current_state == STATE_SIZE_SELECT:
-            title = large_font.render("Select Screen Size", True, COLOR_TEXT)
-            screen.blit(title, (window_width // 2 - title.get_width() // 2, window_height // 6))
-            for btn in size_buttons:
-                btn.draw(screen)
-
-        elif current_state == STATE_MODE_SELECT:
+        if current_state == STATE_MODE_SELECT:
             title = large_font.render("Select Game Mode", True, COLOR_TEXT)
             screen.blit(title, (window_width // 2 - title.get_width() // 2, window_height // 6))
             for btn in mode_buttons:

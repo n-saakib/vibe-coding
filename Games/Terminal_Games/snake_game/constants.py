@@ -78,6 +78,15 @@ DIFFICULTY_LEVELS = {
     }
 }
 
+# Adaptive Board: difficulty → board size mapping (F11)
+DIFFICULTY_SIZE_MAP = {
+    "Base": "Small",
+    "Pro": "Small",
+    "Pro Max": "Medium",
+    "Ultra Pro Max": "Large",
+    "Ultra Pro Max +": "Large"
+}
+
 COLOR_BUTTON = (50, 50, 50)
 COLOR_BUTTON_HOVER = (70, 70, 70)
 COLOR_BONUS_FOOD = (255, 215, 0) # Gold
