@@ -250,6 +250,7 @@ def main():
             wrap_around = (selected_mode == MODE_WRAP_AROUND)
             wall_collision = (selected_mode == MODE_WALL_COLLISION)
             
+            snake.process_queue()  # F1: Process one buffered input per tick
             snake.move(wrap_around=wrap_around)
             
             # Check collision

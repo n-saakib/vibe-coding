@@ -11,6 +11,8 @@ def set_grid_dimensions(width, height):
     GRID_HEIGHT = height
 
 class Snake:
+    MAX_QUEUE_SIZE = 2
+
     def __init__(self):
         # Initial position (center of grid) and length
         self.body = [(GRID_WIDTH // 2, GRID_HEIGHT // 2), 
@@ -19,11 +21,26 @@ class Snake:
         self.direction = (1, 0) # Moving right initially
         self.new_direction = (1, 0)
         self.growth_pool = 0
+        self.command_queue = []  # F1: Input buffering queue
 
     def set_direction(self, direction):
-        # Prevent reversing into self
-        if (direction[0] * -1, direction[1] * -1) != self.direction:
-            self.new_direction = direction
+        """Enqueue a directional command. Validates: no reverse, no duplicate of last queued."""
+        # Determine reference direction: last queued if any, otherwise current
+        ref = self.command_queue[-1] if self.command_queue else self.direction
+        # Block reverse of reference direction
+        if (direction[0] * -1, direction[1] * -1) == ref:
+            return
+        # Block duplicate of last queued entry
+        if self.command_queue and direction == self.command_queue[-1]:
+            return
+        # Enqueue if there's room
+        if len(self.command_queue) < self.MAX_QUEUE_SIZE:
+            self.command_queue.append(direction)
+
+    def process_queue(self):
+        """Pop one command from the queue and apply it. Called once per tick before move()."""
+        if self.command_queue:
+            self.new_direction = self.command_queue.pop(0)
 
     def move(self, wrap_around=False):
         self.direction = self.new_direction
