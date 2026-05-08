@@ -559,14 +559,16 @@ def main():
             # F8: Draw obstacles
             for obs in obstacles:
                 if obs["state"] == "SHADOW":
-                    # Flickering effect when close to materializing (< 1.0s)
-                    if obs["timer"] < 1.0 and int(pygame.time.get_ticks() / 100) % 2 == 0:
-                        continue # Skip drawing this frame to flicker
+                    # Flickering effect: "Flicker twice" means 2 off-cycles
+                    # Warn for 1.0s. 0.8-1.0 (OFF), 0.5-0.7 (OFF), others ON
+                    if (0.75 < obs["timer"] <= 1.0) or (0.25 < obs["timer"] <= 0.5):
+                        continue # OFF phase
                     color = OBSTACLE_SHADOW_COLOR
                 else:
                     # Flickering effect when close to disappearing (< 1.5s)
-                    if obs["timer"] < 1.5 and int(pygame.time.get_ticks() / 150) % 2 == 0:
-                        continue
+                    # 1.1-1.4 (OFF), 0.4-0.7 (OFF)
+                    if (1.1 < obs["timer"] <= 1.4) or (0.4 < obs["timer"] <= 0.7):
+                        continue # OFF phase
                     color = OBSTACLE_COLOR
 
                 for ox, oy in obs["cells"]:

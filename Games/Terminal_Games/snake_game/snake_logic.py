@@ -138,8 +138,9 @@ class BonusFood(Food):
         # Check if head is within the size x size area centered at self.position
         hx, hy = head_pos
         px, py = self.position
-        # Use absolute difference with size // 2
-        # Adding a tiny 0.1 epsilon to integer comparison to handle any casting edge cases
-        # but logically it's: abs(hx - px) <= 1 and abs(hy - py) <= 1
-        half = self.size // 2
-        return abs(int(hx) - int(px)) <= half and abs(int(hy) - int(py)) <= half
+        # Use absolute difference with a slightly more lenient radius.
+        # For size=3, the logic covers cells from px-1 to px+1.
+        # Using 1.5 radius ensures that if the snake head's integer coordinate is at the edge,
+        # it will be caught reliably.
+        radius = (self.size / 2.0)
+        return abs(float(hx) - float(px)) <= radius and abs(float(hy) - float(py)) <= radius
