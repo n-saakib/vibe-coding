@@ -207,31 +207,46 @@ def main():
     # F8: Obstacle spawn helper
     def spawn_obstacles():
         nonlocal obstacles
-        obstacles = []
+        # Only spawn sometimes (randomized)
+        if random.random() > OBSTACLE_SPAWN_CHANCE:
+            return
+
         # Obstacle size scales with board (min 2x2 cells)
         obs_cells = max(OBSTACLE_MIN_CELLS, GRID_WIDTH // 20)
-        count = random.randint(OBSTACLE_COUNT_MIN, OBSTACLE_COUNT_MAX)
+        # Increase count slightly with level
+        max_count = min(OBSTACLE_COUNT_MAX + (level // 2), 6)
+        count = random.randint(OBSTACLE_COUNT_MIN, max_count)
+        
         for _ in range(count):
             attempts = 0
             while attempts < 200:
-                # Pick top-left corner ensuring the block fits
                 ox = random.randint(0, GRID_WIDTH - obs_cells)
                 oy = random.randint(0, GRID_HEIGHT - obs_cells)
-                # Check all cells in the block
                 block_cells = [(ox + dx, oy + dy) for dx in range(obs_cells) for dy in range(obs_cells)]
+                
                 overlap = False
                 for cell in block_cells:
-                    if cell in snake.body or cell == food.position:
+                    if cell == food.position:
                         overlap = True
                         break
                     if bonus_food.active and bonus_food.is_hit(cell):
                         overlap = True
                         break
-                    if cell in obstacles:
-                        overlap = True
-                        break
+                    # Obstacles can overlap other obstacles during shadow phase? 
+                    # Let's keep them separate for now.
+                    for obs in obstacles:
+                        if cell in obs["cells"]:
+                            overlap = True
+                            break
+                    if overlap: break
+                
                 if not overlap:
-                    obstacles.extend(block_cells)
+                    obstacles.append({
+                        "cells": block_cells,
+                        "state": "SHADOW",
+                        "timer": OBSTACLE_SHADOW_DURATION,
+                        "safe_segments": [] # Body segments currently overlapping
+                    })
                     break
                 attempts += 1
 
@@ -352,10 +367,30 @@ def main():
                 shake_timer = SHAKE_DURATION_DEATH
                 shake_intensity = SHAKE_INTENSITY_DEATH
             
-            # F8: Check obstacle collision
-            if snake.body[0] in obstacles:
-                current_state = STATE_GAME_OVER
-            
+            # F8: Update obstacles and check collision
+            dt = 1.0 / max(fps, 1)
+            for obs in obstacles:
+                if obs["state"] == "SHADOW":
+                    obs["timer"] -= dt
+                    if obs["timer"] <= 0:
+                        obs["state"] = "MATERIALIZED"
+                        # When it materializes, capture any segments currently in it as "safe"
+                        obs["safe_segments"] = [seg for seg in snake.body if seg in obs["cells"]]
+                
+                # Check collision if materialized
+                if obs["state"] == "MATERIALIZED":
+                    head = snake.body[0]
+                    if head in obs["cells"]:
+                        # If head is in the wall, check if it was already "safe"
+                        # But wait: "if the head collides with the wall again, it should die"
+                        # This means if the head ENTERS the wall while materialized, it dies.
+                        # If the head is ALREADY in the wall when it materializes, it's safe until it leaves.
+                        if head not in obs["safe_segments"]:
+                            current_state = STATE_GAME_OVER
+                    
+                    # Update safe segments: remove any that are no longer in the wall
+                    obs["safe_segments"] = [seg for seg in obs["safe_segments"] if seg in obs["cells"] and seg in snake.body]
+
             # Update timers
             if bonus_food.active:
                 bonus_food.timer -= 1/fps
@@ -506,19 +541,31 @@ def main():
                 screen.blit(grid_surf, (render_ox, render_oy))
 
             # F8: Draw obstacles
-            for ox, oy in obstacles:
-                obs_rect = pygame.Rect(render_ox + ox * GRID_SIZE,
-                                       render_oy + oy * GRID_SIZE,
-                                       GRID_SIZE, GRID_SIZE)
-                pygame.draw.rect(screen, OBSTACLE_COLOR, obs_rect)
-                # Draw X pattern for visibility
-                inset = 3
-                pygame.draw.line(screen, OBSTACLE_X_COLOR, 
-                                 (obs_rect.left + inset, obs_rect.top + inset),
-                                 (obs_rect.right - inset, obs_rect.bottom - inset), 2)
-                pygame.draw.line(screen, OBSTACLE_X_COLOR,
-                                 (obs_rect.right - inset, obs_rect.top + inset),
-                                 (obs_rect.left + inset, obs_rect.bottom - inset), 2)
+            for obs in obstacles:
+                color = OBSTACLE_COLOR if obs["state"] == "MATERIALIZED" else OBSTACLE_SHADOW_COLOR
+                for ox, oy in obs["cells"]:
+                    obs_rect = pygame.Rect(render_ox + ox * GRID_SIZE,
+                                           render_oy + oy * GRID_SIZE,
+                                           GRID_SIZE, GRID_SIZE)
+                    if obs["state"] == "MATERIALIZED":
+                        pygame.draw.rect(screen, color, obs_rect)
+                        # Draw X pattern for visibility
+                        inset = 3
+                        pygame.draw.line(screen, OBSTACLE_X_COLOR, 
+                                         (obs_rect.left + inset, obs_rect.top + inset),
+                                         (obs_rect.right - inset, obs_rect.bottom - inset), 2)
+                        pygame.draw.line(screen, OBSTACLE_X_COLOR,
+                                         (obs_rect.right - inset, obs_rect.top + inset),
+                                         (obs_rect.left + inset, obs_rect.bottom - inset), 2)
+                    else:
+                        # Draw shadow (outline or semi-transparent)
+                        # Note: SHADOW_COLOR has alpha, so we need a surface or use it directly if supported
+                        if len(color) > 3: # Has alpha
+                            s = pygame.Surface((GRID_SIZE, GRID_SIZE), pygame.SRCALPHA)
+                            s.fill(color)
+                            screen.blit(s, obs_rect)
+                        else:
+                            pygame.draw.rect(screen, color, obs_rect, 2)
 
             # Draw food
             food_rect = pygame.Rect(render_ox + food.position[0] * GRID_SIZE, 

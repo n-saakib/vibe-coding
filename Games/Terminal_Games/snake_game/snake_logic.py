@@ -79,16 +79,29 @@ class Snake:
         return False
 
 class Food:
-    def __init__(self, snake_body, other_food_pos=None):
+    def __init__(self, snake_body, bonus_food=None):
         self.position = (0, 0)
-        self.spawn(snake_body, other_food_pos)
+        self.spawn(snake_body, bonus_food)
 
-    def spawn(self, snake_body, other_food_pos=None):
+    def spawn(self, snake_body, bonus_food=None):
         while True:
             self.position = (random.randint(0, GRID_WIDTH - 1), 
                              random.randint(0, GRID_HEIGHT - 1))
-            if self.position not in snake_body and self.position != other_food_pos:
-                break
+            
+            # Check snake body
+            if self.position in snake_body:
+                continue
+            
+            # Check bonus food (avoid the entire 3x3 area if active)
+            if bonus_food and bonus_food.active:
+                if bonus_food.is_hit(self.position):
+                    continue
+            elif bonus_food and not bonus_food.active:
+                # Even if not active, avoid the center if it was just passed
+                if self.position == bonus_food.position:
+                    continue
+                    
+            break
 
 class BonusFood(Food):
     def __init__(self, snake_body, other_food_pos=None):
@@ -99,6 +112,10 @@ class BonusFood(Food):
 
     def spawn(self, snake_body, other_food_pos=None):
         # Ensure it doesn't spawn too close to the edges to avoid clipping
+        # Grid boundaries are [0, GRID_WIDTH-1]
+        # For 3x3 centered at (px, py), min x is px-1, max x is px+1
+        # So px-1 >= 0 => px >= 1
+        # px+1 <= GRID_WIDTH-1 => px <= GRID_WIDTH-2
         while True:
             self.position = (random.randint(1, GRID_WIDTH - 2), 
                              random.randint(1, GRID_HEIGHT - 2))
@@ -121,6 +138,8 @@ class BonusFood(Food):
         # Check if head is within the size x size area centered at self.position
         hx, hy = head_pos
         px, py = self.position
-        # Use absolute difference with size // 2 to ensure we cover the full area
+        # Use absolute difference with size // 2
+        # Adding a tiny 0.1 epsilon to integer comparison to handle any casting edge cases
+        # but logically it's: abs(hx - px) <= 1 and abs(hy - py) <= 1
         half = self.size // 2
         return abs(int(hx) - int(px)) <= half and abs(int(hy) - int(py)) <= half
