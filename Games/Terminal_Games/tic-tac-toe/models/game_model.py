@@ -1,12 +1,16 @@
+import random
+
 class GameModel:
     """Manages the state and logic of the Tic-Tac-Toe game."""
 
     def __init__(self):
         self.board = [[None for _ in range(3)] for _ in range(3)]
-        self.current_player = 'X'  # X always starts
+        self.player_names = {'X': 'Player X', 'O': 'Player O'}
+        self.current_player = random.choice(['X', 'O'])
         self.winner = None
         self.is_draw = False
         self.scores = {'X': 0, 'O': 0}
+        self.winning_line = None
 
     def make_move(self, row, col):
         """Places a marker at the specified row and column if valid."""
@@ -66,9 +70,9 @@ class GameModel:
         return all(cell is not None for row in self.board for cell in row)
 
     def reset(self):
-        """Resets the game state (but keeps scores)."""
+        """Resets the game state (but keeps scores and names)."""
         self.board = [[None for _ in range(3)] for _ in range(3)]
-        self.current_player = 'X'
+        self.current_player = random.choice(['X', 'O'])
         self.winner = None
         self.is_draw = False
         self.winning_line = None
@@ -76,6 +80,11 @@ class GameModel:
     def reset_scores(self):
         """Resets the scores."""
         self.scores = {'X': 0, 'O': 0}
+
+    def set_player_names(self, name_x, name_o):
+        """Sets custom names for players."""
+        if name_x: self.player_names['X'] = name_x[:8]
+        if name_o: self.player_names['O'] = name_o[:8]
 
     def get_available_moves(self):
         """Returns a list of (row, col) tuples for empty cells."""
