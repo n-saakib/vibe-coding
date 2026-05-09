@@ -17,6 +17,9 @@ This file contains the core mandates and instructions for the Gemini CLI agent. 
 5. **Context Management:**
    - Always keep this `AGENT.md` file in context.
    - Update it whenever rules or plans change.
+6. **Repository Management:**
+   - Commit all changes to the parent repository (`vibe_coding`) on the dedicated branch: `games/terminal-games/tic-tac-toe`.
+   - Ensure the nested `.git` directory in the `tic-tac-toe` folder remains deleted.
 
 ## Technical Stack
 - **Language:** Python 3.x
