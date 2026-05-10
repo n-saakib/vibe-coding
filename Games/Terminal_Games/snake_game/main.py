@@ -581,7 +581,10 @@ def main():
             shake_dx = 0
             shake_dy = 0
             if shake_timer > 0:
-                intensity = shake_intensity * (shake_timer / max(SHAKE_DURATION_DEATH, SHAKE_DURATION_BONUS))
+                # F4: Scale intensity by timer, but ensure short bursts are visible
+                # We cap the divisor to prevent extreme scaling for short durations
+                divisor = max(0.5, shake_timer) if shake_intensity == SHAKE_INTENSITY_BONUS else SHAKE_DURATION_DEATH
+                intensity = shake_intensity * (shake_timer / divisor)
                 shake_dx = random.randint(-int(intensity), int(intensity))
                 shake_dy = random.randint(-int(intensity), int(intensity))
             render_ox = offset_x + shake_dx
