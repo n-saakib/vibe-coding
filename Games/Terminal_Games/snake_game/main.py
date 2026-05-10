@@ -796,10 +796,12 @@ def main():
                 screen.blit(restart_surface, restart_rect)
 
         pygame.display.flip()
+        
         # F9: Apply snail speed reduction
         current_fps = fps
-        if POWERUP_TYPE_SNAIL in snake.active_powerups:
+        if snake and POWERUP_TYPE_SNAIL in snake.active_powerups:
             current_fps *= SNAIL_SPEED_MULTIPLIER
+        
         clock.tick(current_fps if current_state == STATE_PLAYING else 60)
 
 if __name__ == "__main__":
