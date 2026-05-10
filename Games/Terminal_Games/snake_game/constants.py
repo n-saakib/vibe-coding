@@ -182,6 +182,7 @@ COLOR_POWERUP_GHOST = (0, 191, 255) # Deep Sky Blue
 COLOR_POWERUP_SNAIL = (50, 205, 50)  # Lime Green
 POWERUP_DURATION_GHOST = 5.0 # seconds
 POWERUP_DURATION_SNAIL = 10.0 # seconds
+POWERUP_EXPIRE_TIME = 10.0 # seconds (how long it stays on board)
 POWERUP_SPAWN_CHANCE = 0.15 # 15% chance to spawn after level 2
 SNAIL_SPEED_MULTIPLIER = 0.6 # 60% of current speed
 

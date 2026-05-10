@@ -396,6 +396,12 @@ def main():
                     expired_powerups.append(pu_type)
             for pu_type in expired_powerups:
                 del snake.active_powerups[pu_type]
+            
+            # F9: Power-up board expiration
+            if power_up.active:
+                power_up.timer -= dt
+                if power_up.timer <= 0:
+                    power_up.active = False
 
             for obs in obstacles[:]: # Use slice to allow removal
                 obs["timer"] -= dt
@@ -455,6 +461,7 @@ def main():
                 if not power_up.active and level >= 2: # Gate by level 2
                     if random.random() < POWERUP_SPAWN_CHANCE:
                         power_up.spawn(snake.body, [food.position, bonus_food])
+                        power_up.timer = POWERUP_EXPIRE_TIME
 
                 # Dynamic difficulty — curved progression (F2)
                 fps = calculate_fps(score, level_config)
@@ -641,13 +648,25 @@ def main():
 
             # F9: Draw power-up
             if power_up.active:
-                pu_rect = pygame.Rect(render_ox + power_up.position[0] * GRID_SIZE,
-                                      render_oy + power_up.position[1] * GRID_SIZE,
-                                      GRID_SIZE, GRID_SIZE)
-                pu_color = COLOR_POWERUP_GHOST if power_up.type == POWERUP_TYPE_GHOST else COLOR_POWERUP_SNAIL
-                pygame.draw.rect(screen, pu_color, pu_rect)
-                # Add a small white border for visibility
-                pygame.draw.rect(screen, tm["text"], pu_rect, 1)
+                # Flickering effect when < 3s remaining
+                if power_up.timer < 3.0:
+                    # OFF every 0.2s in the last 3s
+                    if int(power_up.timer * 10) % 2 == 0:
+                        pass 
+                    else:
+                        pu_rect = pygame.Rect(render_ox + power_up.position[0] * GRID_SIZE,
+                                              render_oy + power_up.position[1] * GRID_SIZE,
+                                              GRID_SIZE, GRID_SIZE)
+                        pu_color = COLOR_POWERUP_GHOST if power_up.type == POWERUP_TYPE_GHOST else COLOR_POWERUP_SNAIL
+                        pygame.draw.rect(screen, pu_color, pu_rect)
+                        pygame.draw.rect(screen, tm["text"], pu_rect, 1)
+                else:
+                    pu_rect = pygame.Rect(render_ox + power_up.position[0] * GRID_SIZE,
+                                          render_oy + power_up.position[1] * GRID_SIZE,
+                                          GRID_SIZE, GRID_SIZE)
+                    pu_color = COLOR_POWERUP_GHOST if power_up.type == POWERUP_TYPE_GHOST else COLOR_POWERUP_SNAIL
+                    pygame.draw.rect(screen, pu_color, pu_rect)
+                    pygame.draw.rect(screen, tm["text"], pu_rect, 1)
 
             # Draw bonus food (F12: pulse + glow)
             if bonus_food.active:

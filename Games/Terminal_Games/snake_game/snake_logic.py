@@ -151,6 +151,7 @@ class PowerUp(Food):
     def __init__(self, snake_body, other_food_positions=None):
         self.type = random.choice(["Ghost", "Snail"])
         self.active = False
+        self.timer = 0.0 # F9: Expiration timer
         super().__init__(snake_body, other_food_positions)
 
     def spawn(self, snake_body, other_food_positions=None):
