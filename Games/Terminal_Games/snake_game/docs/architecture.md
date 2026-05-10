@@ -13,7 +13,7 @@ Core entities:
 - **`Snake`**: Body list, direction, `command_queue` (input buffering, max 2), `process_queue()`, `prev_body` (for interpolation), `growth_pool`, collision with optional ghost mode.
 - **`Food`**: Random position, spawn avoidance (now explicitly avoids the 3x3 `BonusFood` area).
 - **`BonusFood`**: 3x3 area collision (robust absolute-distance check), timer.
-- **`PowerUp`** (F9 branch only, not in combined): Ghost/Snail buffs.
+- **`PowerUp`**: Inherits from `Food`. Spawns "Ghost" (Blue) or "Snail" (Green) items. Ghost allows self-collision for 5s; Snail slows speed by 40% for 10s.
 
 ### `audio.py` (F6 branch only, not in combined)
 Procedural sound generation — not included in combined build.

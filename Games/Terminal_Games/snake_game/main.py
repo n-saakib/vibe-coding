@@ -639,6 +639,16 @@ def main():
                                     GRID_SIZE, GRID_SIZE)
             pygame.draw.rect(screen, tm["food"], food_rect)
 
+            # F9: Draw power-up
+            if power_up.active:
+                pu_rect = pygame.Rect(render_ox + power_up.position[0] * GRID_SIZE,
+                                      render_oy + power_up.position[1] * GRID_SIZE,
+                                      GRID_SIZE, GRID_SIZE)
+                pu_color = COLOR_POWERUP_GHOST if power_up.type == POWERUP_TYPE_GHOST else COLOR_POWERUP_SNAIL
+                pygame.draw.rect(screen, pu_color, pu_rect)
+                # Add a small white border for visibility
+                pygame.draw.rect(screen, tm["text"], pu_rect, 1)
+
             # Draw bonus food (F12: pulse + glow)
             if bonus_food.active:
                 base_size = GRID_SIZE * 3
@@ -665,8 +675,21 @@ def main():
             prev = snake.prev_body
             curr = snake.body
             wrap = (selected_mode == MODE_WRAP_AROUND) if selected_mode else False
+
+            # F9: Visual feedback for active power-ups
+            is_ghost = POWERUP_TYPE_GHOST in snake.active_powerups
+            is_snail = POWERUP_TYPE_SNAIL in snake.active_powerups
+
             for i, segment in enumerate(curr):
-                color = tm["snake_head"] if i == 0 else tm["snake_body"]
+                base_color = tm["snake_head"] if i == 0 else tm["snake_body"]
+                # Apply power-up visual shifts
+                if is_ghost:
+                    color = (*COLOR_POWERUP_GHOST, 160) # RGBA
+                elif is_snail:
+                    color = (*COLOR_POWERUP_SNAIL, 255)
+                else:
+                    color = base_color
+
                 # Get prev position (handle length mismatch)
                 if i < len(prev):
                     px, py = prev[i]
@@ -689,7 +712,14 @@ def main():
                 ry = (py + (cy - py) * t) * GRID_SIZE
                 seg_rect = pygame.Rect(int(render_ox + rx), int(render_oy + ry),
                                        GRID_SIZE, GRID_SIZE)
-                pygame.draw.rect(screen, color, seg_rect)
+                
+                if len(color) > 3: # Has alpha
+                    s = pygame.Surface((GRID_SIZE, GRID_SIZE), pygame.SRCALPHA)
+                    s.fill(color)
+                    screen.blit(s, seg_rect)
+                else:
+                    pygame.draw.rect(screen, color, seg_rect)
+                
                 pygame.draw.rect(screen, tm["background"], seg_rect, 1)
 
             # F4: Draw particles
@@ -726,6 +756,16 @@ def main():
                     tx += random.randint(-BONUS_SHAKE_INTENSITY, BONUS_SHAKE_INTENSITY)
                     ty += random.randint(-BONUS_SHAKE_INTENSITY // 2, BONUS_SHAKE_INTENSITY // 2)
                 screen.blit(timer_surf, (tx, ty))
+
+            # F9: Draw active power-up timers
+            pu_y = 10
+            for pu_type, time_left in snake.active_powerups.items():
+                pu_text = f"{pu_type.upper()}: {int(time_left + 1)}s"
+                pu_color = COLOR_POWERUP_GHOST if pu_type == POWERUP_TYPE_GHOST else COLOR_POWERUP_SNAIL
+                pu_surf = font.render(pu_text, True, pu_color)
+                # Position them vertically below the level/bonus text or to the side
+                screen.blit(pu_surf, (window_width // 2 - pu_surf.get_width() // 2, 40 + pu_y))
+                pu_y += 25
 
             if current_state == STATE_PAUSED:
                 overlay = pygame.Surface((window_width, window_height), pygame.SRCALPHA)
