@@ -56,9 +56,9 @@ This document outlines the planned enhancements to transition the Snake Game fro
 *   **Description**: Introduces environmental hazards with a warning phase and limited lifetime.
 *   **Requirement**: After Level 3, there's a 40% chance to spawn 1-3 "Shadow" blocks. Shadows materialize after 3 seconds, flickering rapidly in the final 1 second. Once materialized, they last for 7 seconds before disappearing, flickering again in the final 1.5 seconds. Snakes can pass through shadows; if still inside during materialization, the snake remains "safe" until it exits. Re-entering a materialized wall is fatal.
 
-### F9: Power-up System
+### F9: Power-up System (Completed)
 *   **Description**: Temporary buffs that change gameplay dynamics.
-*   **Requirement**: Occasionally spawn a "Blue Food" (Ghost) that allows tail-clipping for 5s, or a "Green Food" (Snail) that slows the game speed for 10s.
+*   **Requirement**: Occasionally spawn a "Blue Food" (Ghost) that allows tail-clipping and passing through materialized obstacles for 5s, or a "Green Food" (Snail) that slows the game speed for 10s.
 
 ### F10: Cosmetic "Vibe" Themes
 *   **Description**: Thematic skins for the snake and board.
