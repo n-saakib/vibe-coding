@@ -5,7 +5,7 @@ import json
 import random
 import math
 from constants import *
-from snake_logic import Snake, Food, BonusFood, set_grid_dimensions
+from snake_logic import Snake, Food, BonusFood, PowerUp, set_grid_dimensions
 
 def load_save_data():
     """Load save data from JSON file, merging with defaults. Returns a dict."""
@@ -110,6 +110,7 @@ def main():
     snake = None
     food = None
     bonus_food = None
+    power_up = None # F9
     obstacles = []  # F8: Static obstacle positions
     score = 0
     score_since_last_bonus = 0
@@ -351,6 +352,8 @@ def main():
                 food = Food(snake.body)
                 bonus_food = BonusFood(snake.body)
                 bonus_food.active = False
+                power_up = PowerUp(snake.body, [food.position, bonus_food])
+                power_up.active = False
                 score = 0
                 score_since_last_bonus = 0
                 high_score = save_data["high_score"]
@@ -384,6 +387,16 @@ def main():
             
             # F8: Update obstacles and check collision
             dt = 1.0 / max(fps, 1)
+
+            # F9: Update power-up timers
+            expired_powerups = []
+            for pu_type in snake.active_powerups:
+                snake.active_powerups[pu_type] -= dt
+                if snake.active_powerups[pu_type] <= 0:
+                    expired_powerups.append(pu_type)
+            for pu_type in expired_powerups:
+                del snake.active_powerups[pu_type]
+
             for obs in obstacles[:]: # Use slice to allow removal
                 obs["timer"] -= dt
                 
@@ -438,8 +451,26 @@ def main():
                 if level >= OBSTACLE_UNLOCK_LEVEL:
                     spawn_obstacles()
                 
+                # F9: Spawn power-up
+                if not power_up.active and level >= 2: # Gate by level 2
+                    if random.random() < POWERUP_SPAWN_CHANCE:
+                        power_up.spawn(snake.body, [food.position, bonus_food])
+
                 # Dynamic difficulty — curved progression (F2)
                 fps = calculate_fps(score, level_config)
+
+            # F9: Check power-up consumption
+            if power_up.active and snake.body[0] == power_up.position:
+                power_up.active = False
+                pu_duration = POWERUP_DURATION_GHOST if power_up.type == POWERUP_TYPE_GHOST else POWERUP_DURATION_SNAIL
+                snake.active_powerups[power_up.type] = pu_duration
+                # Particles
+                pu_color = COLOR_POWERUP_GHOST if power_up.type == POWERUP_TYPE_GHOST else COLOR_POWERUP_SNAIL
+                pu_screen_x = offset_x + power_up.position[0] * GRID_SIZE + GRID_SIZE // 2
+                pu_screen_y = offset_y + power_up.position[1] * GRID_SIZE + GRID_SIZE // 2
+                spawn_particles(pu_screen_x, pu_screen_y, pu_color, PARTICLE_COUNT_FOOD)
+                # Reset power_up type for next spawn
+                power_up.type = random.choice([POWERUP_TYPE_GHOST, POWERUP_TYPE_SNAIL])
 
             # Check bonus food consumption (area collision)
             if bonus_food.active and bonus_food.is_hit(snake.body[0]):
@@ -725,7 +756,11 @@ def main():
                 screen.blit(restart_surface, restart_rect)
 
         pygame.display.flip()
-        clock.tick(fps if current_state == STATE_PLAYING else 60)
+        # F9: Apply snail speed reduction
+        current_fps = fps
+        if POWERUP_TYPE_SNAIL in snake.active_powerups:
+            current_fps *= SNAIL_SPEED_MULTIPLIER
+        clock.tick(current_fps if current_state == STATE_PLAYING else 60)
 
 if __name__ == "__main__":
     main()
