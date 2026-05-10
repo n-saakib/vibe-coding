@@ -23,6 +23,7 @@ class Snake:
         self.growth_pool = 0
         self.command_queue = []  # F1: Input buffering queue
         self.prev_body = list(self.body)  # F5: For interpolation
+        self.active_powerups = {} # F9: {type: remaining_time}
 
     def set_direction(self, direction):
         """Enqueue a directional command. Validates: no reverse, no duplicate of last queued."""

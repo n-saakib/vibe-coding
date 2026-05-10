@@ -175,6 +175,16 @@ COLOR_BUTTON_HOVER = (70, 70, 70)
 COLOR_BONUS_FOOD = (255, 215, 0) # Gold
 COLOR_TIMER = (255, 100, 100) # Red-ish
 
+# F9: Power-ups
+POWERUP_TYPE_GHOST = "Ghost"
+POWERUP_TYPE_SNAIL = "Snail"
+COLOR_POWERUP_GHOST = (0, 191, 255) # Deep Sky Blue
+COLOR_POWERUP_SNAIL = (50, 205, 50)  # Lime Green
+POWERUP_DURATION_GHOST = 5.0 # seconds
+POWERUP_DURATION_SNAIL = 10.0 # seconds
+POWERUP_SPAWN_CHANCE = 0.15 # 15% chance to spawn after level 2
+SNAIL_SPEED_MULTIPLIER = 0.6 # 60% of current speed
+
 # F12: Bonus Food Visual Enhancements
 BONUS_PULSE_SPEED = 4.0
 BONUS_PULSE_AMPLITUDE = 0.15
