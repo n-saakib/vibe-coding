@@ -74,9 +74,10 @@ class Snake:
         if wall_collision:
             if head[0] < 0 or head[0] >= GRID_WIDTH or head[1] < 0 or head[1] >= GRID_HEIGHT:
                 return True
-        # Self collision
-        if head in self.body[1:]:
-            return True
+        # Self collision (F9: skip if Ghost mode active)
+        if "Ghost" not in self.active_powerups:
+            if head in self.body[1:]:
+                return True
         return False
 
 class Food:
@@ -145,3 +146,46 @@ class BonusFood(Food):
         # it will be caught reliably.
         radius = (self.size / 2.0)
         return abs(float(hx) - float(px)) <= radius and abs(float(hy) - float(py)) <= radius
+
+class PowerUp(Food):
+    def __init__(self, snake_body, other_food_positions=None):
+        self.type = random.choice(["Ghost", "Snail"])
+        self.active = False
+        super().__init__(snake_body, other_food_positions)
+
+    def spawn(self, snake_body, other_food_positions=None):
+        """
+        Spawn a power-up ensuring it doesn't overlap with snake or other foods.
+        'other_food_positions' can be a single position or a list/tuple of positions/objects.
+        """
+        while True:
+            self.position = (random.randint(0, GRID_WIDTH - 1), 
+                             random.randint(0, GRID_HEIGHT - 1))
+            
+            # Check snake body
+            if self.position in snake_body:
+                continue
+            
+            # Check other foods/obstacles
+            overlap = False
+            if other_food_positions:
+                if not isinstance(other_food_positions, (list, tuple)):
+                    other_food_positions = [other_food_positions]
+                
+                for other in other_food_positions:
+                    if hasattr(other, 'active') and hasattr(other, 'is_hit'): # BonusFood check
+                        if other.active and other.is_hit(self.position):
+                            overlap = True
+                            break
+                    elif hasattr(other, 'position'): # Food/PowerUp check
+                        if self.position == other.position:
+                            overlap = True
+                            break
+                    elif isinstance(other, tuple) and len(other) == 2: # Raw position
+                        if self.position == other:
+                            overlap = True
+                            break
+            
+            if not overlap:
+                break
+        self.active = True
