@@ -159,9 +159,9 @@ OBSTACLE_SPAWN_CHANCE = 0.4 # 40% chance after eating food
 
 # F4: Screen Shake & Particles
 SHAKE_INTENSITY_DEATH = 10
-SHAKE_DURATION_DEATH = 0.6 # seconds
-SHAKE_INTENSITY_BONUS = 12 # Increased for impact
-SHAKE_DURATION_BONUS = 0.4 # Increased for impact
+SHAKE_DURATION_DEATH = 6.0 # restored
+SHAKE_INTENSITY_BONUS = 12 
+SHAKE_DURATION_BONUS = 0.15 # decreased more than half (was 0.4)
 PARTICLE_COUNT_FOOD = 15
 PARTICLE_COUNT_BONUS = 60 # Increased for impact
 PARTICLE_COUNT_DEATH = 25

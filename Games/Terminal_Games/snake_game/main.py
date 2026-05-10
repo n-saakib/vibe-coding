@@ -418,6 +418,10 @@ def main():
                         obstacles.remove(obs)
                         continue
                         
+                    # F9: Ghost mode allows passing through materialized obstacles
+                    if POWERUP_TYPE_GHOST in snake.active_powerups:
+                        continue
+
                     head = snake.body[0]
                     if head in obs["cells"]:
                         if head not in obs["safe_segments"]:
@@ -434,7 +438,7 @@ def main():
 
             # Update timers
             if bonus_food.active:
-                bonus_food.timer -= 1/fps
+                bonus_food.timer -= dt
                 if bonus_food.timer <= 0:
                     bonus_food.active = False
             
