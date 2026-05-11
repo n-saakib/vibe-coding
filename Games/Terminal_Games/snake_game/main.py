@@ -49,11 +49,16 @@ class Button:
         self.color = color
         self.hover_color = hover_color
         self.is_hovered = False
+        self.is_selected = False # F13: Keyboard focus
 
     def draw(self, screen):
-        color = self.hover_color if self.is_hovered else self.color
+        color = self.hover_color if (self.is_hovered or self.is_selected) else self.color
         pygame.draw.rect(screen, color, self.rect, border_radius=5)
-        pygame.draw.rect(screen, COLOR_TEXT, self.rect, 2, border_radius=5)
+        
+        # F13: Highlight selected button with a thicker/brighter border
+        border_color = COLOR_SNAKE_HEAD if self.is_selected else COLOR_TEXT
+        border_width = 4 if self.is_selected else 2
+        pygame.draw.rect(screen, border_color, self.rect, border_width, border_radius=5)
         
         text_surf = self.font.render(self.text, True, COLOR_TEXT)
         text_rect = text_surf.get_rect(center=self.rect.center)
