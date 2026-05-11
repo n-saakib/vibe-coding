@@ -138,6 +138,7 @@ def main():
     mode_buttons = []
     level_buttons = []
     theme_buttons = []  # F10
+    game_over_buttons = [] # F13
     pause_buttons = []
     start_button = None
     selected_theme = "Classic"  # F10
@@ -189,6 +190,12 @@ def main():
             Button(center_x, window_height // 2 - 35, btn_width, 50, "RESUME", font),
             Button(center_x, window_height // 2 + 35, btn_width, 50, "QUIT TO MENU", font)
         ]
+        
+        # F13: Add game over buttons
+        game_over_buttons = [
+            Button(center_x, window_height // 2 + 20, btn_width, 50, "RESTART", font),
+            Button(center_x, window_height // 2 + 90, btn_width, 50, "QUIT TO MENU", font)
+        ]
 
     # Initial layout call
     update_layout()
@@ -205,6 +212,8 @@ def main():
             return [start_button]
         elif current_state == STATE_PAUSED:
             return pause_buttons
+        elif current_state == STATE_GAME_OVER:
+            return game_over_buttons
         # Note: GAME_OVER buttons will be added in Phase 3
         return []
 
@@ -857,17 +866,25 @@ def main():
                 screen.blit(overlay, (0, 0))
 
                 over_surface = large_font.render("GAME OVER", True, tm["food"])
-                restart_surface = font.render("Press R to Restart", True, tm["text"])
                 final_score_surface = font.render(f"Final Score: {score}", True, tm["text"])
                 
                 mid_y = window_height // 2
-                over_rect = over_surface.get_rect(center=(window_width // 2, mid_y - 40))
-                final_rect = final_score_surface.get_rect(center=(window_width // 2, mid_y + 10))
-                restart_rect = restart_surface.get_rect(center=(window_width // 2, mid_y + 60))
+                over_rect = over_surface.get_rect(center=(window_width // 2, mid_y - 120))
+                final_rect = final_score_surface.get_rect(center=(window_width // 2, mid_y - 60))
                 
                 screen.blit(over_surface, over_rect)
                 screen.blit(final_score_surface, final_rect)
-                screen.blit(restart_surface, restart_rect)
+                
+                for i, btn in enumerate(game_over_buttons):
+                    btn.update(mouse_pos)
+                    btn.draw(screen)
+                    if btn.is_clicked(mouse_pos, mouse_up or (i == keyboard_index and mouse_up)):
+                        if btn.text == "RESTART":
+                            current_state = STATE_MODE_SELECT
+                            game_over_processed = False
+                        elif btn.text == "QUIT TO MENU":
+                            current_state = STATE_MODE_SELECT
+                            game_over_processed = False
 
         pygame.display.flip()
         
