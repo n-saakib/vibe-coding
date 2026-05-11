@@ -101,6 +101,8 @@ def main():
 
     # Game State Variables
     current_state = STATE_MODE_SELECT
+    prev_state = None # To detect state changes
+    keyboard_index = -1 # F13: -1 means no keyboard focus
     selected_size_name = "Medium" # Default for initial layout
     selected_mode = save_data.get("last_mode")
     selected_level = save_data.get("last_level")
@@ -190,6 +192,21 @@ def main():
 
     # Initial layout call
     update_layout()
+
+    # F13: Helper to get buttons for current state
+    def get_current_buttons():
+        if current_state == STATE_MODE_SELECT:
+            return mode_buttons
+        elif current_state == STATE_LEVEL_SELECT:
+            return level_buttons
+        elif current_state == STATE_THEME_SELECT:
+            return theme_buttons
+        elif current_state == STATE_START_SCREEN:
+            return [start_button]
+        elif current_state == STATE_PAUSED:
+            return pause_buttons
+        # Note: GAME_OVER buttons will be added in Phase 3
+        return []
 
     # F4: Particle spawn helper
     def spawn_particles(screen_x, screen_y, color, count):
