@@ -294,6 +294,11 @@ def main():
         tick_duration = 1.0 / max(fps, 1) if fps > 0 else 1.0 / 7
         t = min(1.0, (current_time - last_tick_time) / tick_duration) if last_tick_time > 0 else 0.0
         
+        # F13: Reset keyboard index on state change
+        if current_state != prev_state:
+            keyboard_index = -1
+            prev_state = current_state
+
         mouse_pos = pygame.mouse.get_pos()
         mouse_up = False
 
@@ -310,7 +315,23 @@ def main():
             if event.type == pygame.MOUSEBUTTONUP:
                 mouse_up = True
             
+            # F13: Clear keyboard focus on mouse movement
+            if event.type == pygame.MOUSEMOTION:
+                keyboard_index = -1
+
             if event.type == pygame.KEYDOWN:
+                # F13: Menu Navigation
+                if current_state in (STATE_MODE_SELECT, STATE_LEVEL_SELECT, STATE_THEME_SELECT, STATE_START_SCREEN, STATE_PAUSED, STATE_GAME_OVER):
+                    buttons = get_current_buttons()
+                    if buttons:
+                        if event.key == pygame.K_UP or event.key == pygame.K_LEFT:
+                            keyboard_index = (keyboard_index - 1) % len(buttons)
+                        elif event.key == pygame.K_DOWN or event.key == pygame.K_RIGHT:
+                            keyboard_index = (keyboard_index + 1) % len(buttons)
+                        elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                            if keyboard_index >= 0:
+                                mouse_up = True # Simulate click for the selected button
+
                 if current_state == STATE_PLAYING:
                     if event.key == pygame.K_UP:
                         snake.set_direction((0, -1))
@@ -331,19 +352,24 @@ def main():
                         game_over_processed = False
 
         # 2. Update Logic
+        buttons = get_current_buttons()
+        # F13: Update selection state for all buttons
+        for i, btn in enumerate(buttons):
+            btn.is_selected = (i == keyboard_index)
+
         if current_state == STATE_MODE_SELECT:
-            for btn in mode_buttons:
+            for i, btn in enumerate(mode_buttons):
                 btn.update(mouse_pos)
-                if btn.is_clicked(mouse_pos, mouse_up):
+                if btn.is_clicked(mouse_pos, mouse_up or (i == keyboard_index and mouse_up)):
                     selected_mode = btn.text
                     save_data["last_mode"] = selected_mode
                     save_save_data(save_data)
                     current_state = STATE_LEVEL_SELECT
         
         elif current_state == STATE_LEVEL_SELECT:
-            for btn in level_buttons:
+            for i, btn in enumerate(level_buttons):
                 btn.update(mouse_pos)
-                if btn.is_clicked(mouse_pos, mouse_up):
+                if btn.is_clicked(mouse_pos, mouse_up or (i == keyboard_index and mouse_up)):
                     selected_level = btn.text
                     save_data["last_level"] = selected_level
                     save_save_data(save_data)
@@ -359,16 +385,16 @@ def main():
                     current_state = STATE_THEME_SELECT  # F10
         
         elif current_state == STATE_THEME_SELECT:
-            for btn in theme_buttons:
+            for i, btn in enumerate(theme_buttons):
                 btn.update(mouse_pos)
-                if btn.is_clicked(mouse_pos, mouse_up):
+                if btn.is_clicked(mouse_pos, mouse_up or (i == keyboard_index and mouse_up)):
                     selected_theme = btn.text
                     set_theme(selected_theme)
                     current_state = STATE_START_SCREEN
         
         elif current_state == STATE_START_SCREEN:
             start_button.update(mouse_pos)
-            if start_button.is_clicked(mouse_pos, mouse_up):
+            if start_button.is_clicked(mouse_pos, mouse_up or (keyboard_index == 0 and mouse_up)):
                 # Initialize Game
                 snake = Snake()
                 food = Food(snake.body)
@@ -525,9 +551,9 @@ def main():
                 score_since_last_bonus = 0
         
         elif current_state == STATE_PAUSED:
-            for btn in pause_buttons:
+            for i, btn in enumerate(pause_buttons):
                 btn.update(mouse_pos)
-                if btn.is_clicked(mouse_pos, mouse_up):
+                if btn.is_clicked(mouse_pos, mouse_up or (i == keyboard_index and mouse_up)):
                     if btn.text == "RESUME":
                         current_state = STATE_PLAYING
                     elif btn.text == "QUIT TO MENU":
