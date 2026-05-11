@@ -23,9 +23,12 @@ python main.py
 
 ### 3. Controls
 - **Mouse**: Select game mode and difficulty level in the menus.
-- **Arrow Keys**: Change direction (Up, Down, Left, Right).
-- **P / ESC Key**: Pause or Resume the game.
-- **R Key**: Return to the main menu when in the Game Over state.
+- **Keyboard**:
+    - **Navigation**: Use `Up`/`Down` or `Left`/`Right` arrow keys to highlight menu options.
+    - **Select**: Press `Enter` or `Space` to select the highlighted option.
+    - **Movement**: `Up`/`Down`/`Left`/`Right` to change snake direction.
+    - **P / ESC Key**: Pause or Resume the game.
+    - **Game Over**: Use `Arrow` keys and `Enter` to RESTART or return to menu.
 
 ## Gameplay & Events
 
