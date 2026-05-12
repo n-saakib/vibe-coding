@@ -34,19 +34,27 @@ python main.py
 
 The game follows a structured sequence of events to get you started:
 
-1.  **Size Selection**: Choose your preferred game board size: **Small** (40x40 grid), **Medium** (60x60 grid), or **Large** (80x80 grid). The window is resizable and will automatically center the game board within the playable area.
-2.  **Mode Selection**: Choose between **Standard** (wall collision) or **Wrap Around** (no wall deaths).
-3.  **Start Screen**: A final confirmation screen displays your chosen settings. Click **START GAME** to begin.
-4.  **The Game Loop**:
+1.  **Main Menu**: Choose between **Standard** (wall collision) or **Wrap Around** (no wall deaths). You can also view the **Leaderboard** from here.
+2.  **Size Selection**: Choose your preferred game board size.
+3.  **Theme Selection**: Select a visual "vibe" (Classic, Cyberpunk, Forest).
+4.  **Name Input**: Enter your player name (up to 15 characters). The game remembers your last name.
+5.  **Start Screen**: A final confirmation screen displays your chosen settings and player name. Click **START GAME** to begin.
+6.  **The Game Loop**:
     - **Movement**: The snake moves constantly in the current direction.
     - **Eating**: Consuming food increases your score and triggers the **Growth Event**. Standard food intelligently avoids spawning on top of active bonus food areas.
     - **Bonus Food**: After reaching a level-specific score threshold, a **3x3 Golden Bonus Food** appears for a limited time. Eating it gives **5x points** and double the normal growth. Hit detection is robust across all 9 cells. A countdown timer will appear at the top when it's active.
     - **Shadow Obstacles**: After Level 3, hazards appear. They start as "Shadows" (semi-transparent) for 3 seconds. The snake can pass through shadows. If the snake is inside a shadow when it materializes, it remains safe until it exits the wall. However, entering a materialized wall from the outside is fatal. Shadows flicker rapidly as they are about to materialize.
     - **Growth**: The snake grows by a specific number of segments based on your chosen difficulty level.
     - **Speeding Up**: Every 50 points, a **Difficulty Event** occurs, increasing the game speed.
-5.  **Game Over**: If you collide with yourself (or a wall in Standard mode), the game ends. Your high score is saved locally.
+7.  **Game Over**: If you collide with yourself (or a wall in Standard mode), the game ends. Your score and timestamp are saved to the **Top 100 Leaderboard**.
 
 ## Game Features
+
+### Leaderboard & Persistence
+- **Top 100 Tracking**: Stores the 100 highest scores with player names and date/time.
+- **Interactive UI**: View the leaderboard with pagination (10 per page).
+- **Sortable**: Toggle sorting between Score (desc), Name (asc), and Date (desc).
+- **External Storage**: Score data is stored in `scores/leaderboard.json` (ignored by version control).
 
 ### Game Modes
 - **Standard**: The classic experience. Hitting a wall ends the game.
