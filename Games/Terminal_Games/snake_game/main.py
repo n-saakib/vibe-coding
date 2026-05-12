@@ -130,6 +130,11 @@ def main():
     selected_mode = save_data.get("last_mode")
     selected_level = save_data.get("last_level")
     player_name = save_data.get("last_player_name", "Player 1") # F13
+    
+    # F13: Leaderboard UI state
+    leaderboard_page = 0
+    leaderboard_sort_mode = "Score" # Options: Score, Name, Date
+    leaderboard_data = [] # Cached for current sort
 
     # Board pixel dimensions (SCREEN_WIDTH/HEIGHT renamed conceptually)
     board_width = SCREEN_WIDTH
@@ -163,6 +168,7 @@ def main():
     level_buttons = []
     theme_buttons = []  # F10
     game_over_buttons = [] # F13
+    leaderboard_buttons = [] # F13
     pause_buttons = []
     start_button = None
     selected_theme = "Classic"  # F10
@@ -195,7 +201,18 @@ def main():
 
         mode_buttons = [
             Button(center_x, y_start, btn_width, 50, MODE_WALL_COLLISION, font),
-            Button(center_x, y_start + 70, btn_width, 50, MODE_WRAP_AROUND, font)
+            Button(center_x, y_start + 70, btn_width, 50, MODE_WRAP_AROUND, font),
+            Button(center_x, y_start + 140, btn_width, 50, "VIEW LEADERBOARD", font)
+        ]
+        
+        # F13: Leaderboard navigation buttons
+        lb_btn_w = 120
+        lb_y = window_height - 80
+        leaderboard_buttons = [
+            Button(window_width // 2 - 250, lb_y, lb_btn_w, 40, "PREV", font),
+            Button(window_width // 2 - 120, lb_y, lb_btn_w, 40, "NEXT", font),
+            Button(window_width // 2 + 10, lb_y, lb_btn_w, 40, "SORT", font),
+            Button(window_width // 2 + 140, lb_y, lb_btn_w, 40, "BACK", font)
         ]
 
         level_buttons = []
@@ -232,14 +249,27 @@ def main():
             return level_buttons
         elif current_state == STATE_THEME_SELECT:
             return theme_buttons
+        elif current_state == STATE_NAME_INPUT:
+            return []
+        elif current_state == STATE_LEADERBOARD:
+            return leaderboard_buttons
         elif current_state == STATE_START_SCREEN:
             return [start_button]
         elif current_state == STATE_PAUSED:
             return pause_buttons
         elif current_state == STATE_GAME_OVER:
             return game_over_buttons
-        # Note: GAME_OVER buttons will be added in Phase 3
         return []
+
+    # F13: Sort leaderboard based on mode
+    def sort_leaderboard_data():
+        nonlocal leaderboard_data
+        if leaderboard_sort_mode == "Score":
+            leaderboard_data.sort(key=lambda x: (x["score"], x["date"]), reverse=True)
+        elif leaderboard_sort_mode == "Name":
+            leaderboard_data.sort(key=lambda x: x["name"].lower())
+        elif leaderboard_sort_mode == "Date":
+            leaderboard_data.sort(key=lambda x: x["date"], reverse=True)
 
     # F4: Particle spawn helper
     def spawn_particles(screen_x, screen_y, color, count):
@@ -407,10 +437,37 @@ def main():
             for i, btn in enumerate(mode_buttons):
                 btn.update(mouse_pos)
                 if btn.is_clicked(mouse_pos, mouse_up or (i == keyboard_index and mouse_up)):
-                    selected_mode = btn.text
-                    save_data["last_mode"] = selected_mode
-                    save_save_data(save_data)
-                    current_state = STATE_LEVEL_SELECT
+                    if btn.text == "VIEW LEADERBOARD":
+                        leaderboard_data = load_leaderboard()
+                        leaderboard_sort_mode = "Score"
+                        sort_leaderboard_data()
+                        leaderboard_page = 0
+                        current_state = STATE_LEADERBOARD
+                    else:
+                        selected_mode = btn.text
+                        save_data["last_mode"] = selected_mode
+                        save_save_data(save_data)
+                        current_state = STATE_LEVEL_SELECT
+        
+        elif current_state == STATE_LEADERBOARD:
+            for i, btn in enumerate(leaderboard_buttons):
+                btn.update(mouse_pos)
+                if btn.is_clicked(mouse_pos, mouse_up or (i == keyboard_index and mouse_up)):
+                    if btn.text == "BACK":
+                        current_state = STATE_MODE_SELECT
+                    elif btn.text == "NEXT":
+                        if (leaderboard_page + 1) * 10 < len(leaderboard_data):
+                            leaderboard_page += 1
+                    elif btn.text == "PREV":
+                        if leaderboard_page > 0:
+                            leaderboard_page -= 1
+                    elif btn.text == "SORT":
+                        # Cycle modes: Score -> Name -> Date -> Score
+                        modes = ["Score", "Name", "Date"]
+                        idx = (modes.index(leaderboard_sort_mode) + 1) % len(modes)
+                        leaderboard_sort_mode = modes[idx]
+                        sort_leaderboard_data()
+                        leaderboard_page = 0
         
         elif current_state == STATE_LEVEL_SELECT:
             for i, btn in enumerate(level_buttons):
@@ -696,6 +753,51 @@ def main():
             
             prompt = font.render("Press ENTER to continue", True, COLOR_SNAKE_BODY)
             screen.blit(prompt, (window_width // 2 - prompt.get_width() // 2, box_y + 100))
+
+        elif current_state == STATE_LEADERBOARD:
+            title = large_font.render("Leaderboard", True, COLOR_TEXT)
+            screen.blit(title, (window_width // 2 - title.get_width() // 2, 40))
+            
+            # Header info
+            sort_info = font.render(f"Sorted by: {leaderboard_sort_mode}", True, COLOR_SNAKE_HEAD)
+            page_info = font.render(f"Page {leaderboard_page + 1}/{max(1, (len(leaderboard_data) + 9) // 10)}", True, COLOR_TEXT)
+            screen.blit(sort_info, (window_width // 2 - sort_info.get_width() // 2, 100))
+            screen.blit(page_info, (window_width // 2 - page_info.get_width() // 2, 130))
+            
+            # Table Headers
+            cols = [("Rank", 0.1), ("Name", 0.35), ("Score", 0.65), ("Date", 0.85)]
+            header_y = 180
+            for label, pos_pct in cols:
+                txt = font.render(label, True, COLOR_SNAKE_BODY)
+                screen.blit(txt, (offset_x + board_width * pos_pct - txt.get_width() // 2, header_y))
+            
+            pygame.draw.line(screen, COLOR_TEXT, (offset_x + 20, header_y + 35), (offset_x + board_width - 20, header_y + 35), 2)
+            
+            # Data Rows
+            start_idx = leaderboard_page * 10
+            end_idx = min(start_idx + 10, len(leaderboard_data))
+            for i in range(start_idx, end_idx):
+                entry = leaderboard_data[i]
+                row_y = header_y + 50 + (i - start_idx) * 40
+                
+                # Rank
+                txt = font.render(str(i + 1), True, COLOR_TEXT)
+                screen.blit(txt, (offset_x + board_width * 0.1 - txt.get_width() // 2, row_y))
+                
+                # Name
+                txt = font.render(entry["name"], True, COLOR_TEXT)
+                screen.blit(txt, (offset_x + board_width * 0.35 - txt.get_width() // 2, row_y))
+                
+                # Score
+                txt = font.render(str(entry["score"]), True, COLOR_SNAKE_HEAD)
+                screen.blit(txt, (offset_x + board_width * 0.65 - txt.get_width() // 2, row_y))
+                
+                # Date
+                txt = font.render(entry["date"], True, COLOR_TEXT)
+                screen.blit(txt, (offset_x + board_width * 0.85 - txt.get_width() // 2, row_y))
+            
+            for btn in leaderboard_buttons:
+                btn.draw(screen)
 
         elif current_state == STATE_START_SCREEN:
             title = large_font.render("Ready?", True, COLOR_TEXT)
