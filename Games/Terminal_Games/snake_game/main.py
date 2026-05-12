@@ -128,6 +128,7 @@ def main():
     selected_size_name = "Medium" # Default for initial layout
     selected_mode = save_data.get("last_mode")
     selected_level = save_data.get("last_level")
+    player_name = save_data.get("last_player_name", "Player 1") # F13
 
     # Board pixel dimensions (SCREEN_WIDTH/HEIGHT renamed conceptually)
     board_width = SCREEN_WIDTH
@@ -351,8 +352,21 @@ def main():
                 keyboard_index = -1
 
             if event.type == pygame.KEYDOWN:
+                # F13: Name Input Handling
+                if current_state == STATE_NAME_INPUT:
+                    if event.key == pygame.K_RETURN:
+                        if player_name.strip():
+                            save_data["last_player_name"] = player_name.strip()
+                            save_save_data(save_data)
+                            current_state = STATE_START_SCREEN
+                    elif event.key == pygame.K_BACKSPACE:
+                        player_name = player_name[:-1]
+                    else:
+                        if len(player_name) < 15 and event.unicode.isprintable():
+                            player_name += event.unicode
+
                 # F13: Menu Navigation
-                if current_state in (STATE_MODE_SELECT, STATE_LEVEL_SELECT, STATE_THEME_SELECT, STATE_START_SCREEN, STATE_PAUSED, STATE_GAME_OVER):
+                if current_state in (STATE_MODE_SELECT, STATE_LEVEL_SELECT, STATE_THEME_SELECT, STATE_NAME_INPUT, STATE_LEADERBOARD, STATE_START_SCREEN, STATE_PAUSED, STATE_GAME_OVER):
                     buttons = get_current_buttons()
                     if buttons:
                         if event.key == pygame.K_UP or event.key == pygame.K_LEFT:
@@ -421,8 +435,11 @@ def main():
                 if btn.is_clicked(mouse_pos, mouse_up or (i == keyboard_index and mouse_up)):
                     selected_theme = btn.text
                     set_theme(selected_theme)
-                    current_state = STATE_START_SCREEN
+                    current_state = STATE_NAME_INPUT
         
+        elif current_state == STATE_NAME_INPUT:
+            pass # Handling is entirely via event loop for text entry
+
         elif current_state == STATE_START_SCREEN:
             start_button.update(mouse_pos)
             if start_button.is_clicked(mouse_pos, mouse_up or (keyboard_index == 0 and mouse_up)):
@@ -639,11 +656,36 @@ def main():
             for btn in theme_buttons:
                 btn.draw(screen)
 
+        elif current_state == STATE_NAME_INPUT:
+            title = large_font.render("Enter Your Name", True, COLOR_TEXT)
+            screen.blit(title, (window_width // 2 - title.get_width() // 2, window_height // 4))
+            
+            # Draw name box
+            box_w = 400
+            box_h = 60
+            box_x = window_width // 2 - box_w // 2
+            box_y = window_height // 2 - box_h // 2
+            
+            pygame.draw.rect(screen, COLOR_BUTTON, (box_x, box_y, box_w, box_h), border_radius=5)
+            pygame.draw.rect(screen, COLOR_SNAKE_HEAD, (box_x, box_y, box_w, box_h), 3, border_radius=5)
+            
+            # Blinking cursor effect
+            display_name = player_name
+            if int(pygame.time.get_ticks() / 500) % 2 == 0:
+                display_name += "_"
+                
+            name_surf = font.render(display_name, True, COLOR_TEXT)
+            screen.blit(name_surf, (box_x + 20, box_y + (box_h - name_surf.get_height()) // 2))
+            
+            prompt = font.render("Press ENTER to continue", True, COLOR_SNAKE_BODY)
+            screen.blit(prompt, (window_width // 2 - prompt.get_width() // 2, box_y + 100))
+
         elif current_state == STATE_START_SCREEN:
             title = large_font.render("Ready?", True, COLOR_TEXT)
             screen.blit(title, (window_width // 2 - title.get_width() // 2, window_height // 6))
             
             info_lines = [
+                f"Player: {player_name}",
                 f"Size: {selected_size_name}",
                 f"Mode: {selected_mode}",
                 f"Level: {selected_level}"
