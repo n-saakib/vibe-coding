@@ -1002,7 +1002,13 @@ def main():
 
             # Draw UI
             score_surface = font.render(f"Score: {score}", True, tm["text"])
-            high_score_surface = font.render(f"High Score: {high_score}", True, tm["text"])
+            
+            # F13: Enhanced High Score with top player name
+            leaderboard = load_leaderboard()
+            top_name = leaderboard[0]["name"] if leaderboard else "None"
+            hs_text = f"Best: {top_name} ({high_score})"
+            high_score_surface = font.render(hs_text, True, tm["text"])
+            
             level_surface = font.render(f"Level: {selected_level}", True, tm["text"])
             
             screen.blit(score_surface, (10, 10))
