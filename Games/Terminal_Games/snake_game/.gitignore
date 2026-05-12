@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 highscore.txt
 save_data.json
+scores/
