@@ -41,6 +41,26 @@ def save_save_data(save_data):
     except OSError:
         pass  # Silently fail if we can't write
 
+def load_leaderboard():
+    """Load leaderboard data from JSON file. Returns a list."""
+    if os.path.exists(LEADERBOARD_PATH):
+        try:
+            with open(LEADERBOARD_PATH, "r") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, ValueError):
+            pass
+    return []
+
+def save_leaderboard(leaderboard):
+    """Write leaderboard list to JSON file."""
+    try:
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(LEADERBOARD_PATH), exist_ok=True)
+        with open(LEADERBOARD_PATH, "w") as f:
+            json.dump(leaderboard, f, indent=4)
+    except OSError:
+        pass
+
 class Button:
     def __init__(self, x, y, width, height, text, font, color=COLOR_BUTTON, hover_color=COLOR_BUTTON_HOVER):
         self.rect = pygame.Rect(x, y, width, height)
@@ -74,6 +94,8 @@ class Button:
 STATE_MODE_SELECT = "MODE_SELECT"
 STATE_LEVEL_SELECT = "LEVEL_SELECT"
 STATE_THEME_SELECT = "THEME_SELECT"  # F10
+STATE_NAME_INPUT = "NAME_INPUT"      # F13
+STATE_LEADERBOARD = "LEADERBOARD"    # F13
 STATE_START_SCREEN = "START_SCREEN"
 STATE_PLAYING = "PLAYING"
 STATE_PAUSED = "PAUSED"

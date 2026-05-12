@@ -262,10 +262,12 @@ def get_theme():
 
 # Save Data
 SAVE_DATA_PATH = "save_data.json"
+LEADERBOARD_PATH = "scores/leaderboard.json" # F13
 DEFAULT_SAVE_DATA = {
     "high_score": 0,
     "total_games": 0,
     "total_golden_food": 0,
     "last_mode": None,
-    "last_level": None
+    "last_level": None,
+    "last_player_name": "Player 1" # F13
 }
