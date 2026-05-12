@@ -4,6 +4,7 @@ import os
 import json
 import random
 import math
+from datetime import datetime # F13
 from constants import *
 from snake_logic import Snake, Food, BonusFood, PowerUp, set_grid_dimensions
 
@@ -611,9 +612,25 @@ def main():
         elif current_state == STATE_GAME_OVER:
             if not game_over_processed:
                 save_data["total_games"] = save_data.get("total_games", 0) + 1
-                if score > save_data["high_score"]:
-                    save_data["high_score"] = score
-                    high_score = score
+                
+                # F13: Update Leaderboard
+                leaderboard = load_leaderboard()
+                leaderboard.append({
+                    "name": player_name,
+                    "score": score,
+                    "date": datetime.now().strftime("%Y-%m-%d %H:%M")
+                })
+                # Sort by score desc, then date desc
+                leaderboard.sort(key=lambda x: (x["score"], x["date"]), reverse=True)
+                # Keep top 100
+                leaderboard = leaderboard[:100]
+                save_leaderboard(leaderboard)
+                
+                # Update high score from the top of the leaderboard
+                if leaderboard:
+                    high_score = leaderboard[0]["score"]
+                    save_data["high_score"] = high_score
+                    
                 save_save_data(save_data)
                 game_over_processed = True
 
