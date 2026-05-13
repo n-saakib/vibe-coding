@@ -234,8 +234,8 @@ def main():
         
         # F13: Add game over buttons
         game_over_buttons = [
-            Button(center_x, window_height // 2 + 20, btn_width, 50, "RESTART", font),
-            Button(center_x, window_height // 2 + 90, btn_width, 50, "QUIT TO MENU", font)
+            Button(center_x, window_height // 2 + 20, btn_width, 50, "PLAY AGAIN", font),
+            Button(center_x, window_height // 2 + 90, btn_width, 50, "MAIN MENU", font)
         ]
 
     # Initial layout call
@@ -289,6 +289,29 @@ def main():
                 "max_life": life,
                 "size": random.randint(2, 5)
             })
+
+    # F13: Reset game with current settings
+    def reset_game():
+        nonlocal snake, food, bonus_food, power_up, score, score_since_last_bonus, high_score, fps, obstacles, level, shake_timer, shake_intensity, particles, last_tick_time, game_over_processed, current_state
+        snake = Snake()
+        food = Food(snake.body)
+        bonus_food = BonusFood(snake.body)
+        bonus_food.active = False
+        power_up = PowerUp(snake.body, [food.position, bonus_food])
+        power_up.active = False
+        score = 0
+        score_since_last_bonus = 0
+        high_score = save_data["high_score"]
+        level_config = DIFFICULTY_LEVELS[selected_level]
+        fps = level_config["start_fps"]
+        obstacles = []  # F8: Reset obstacles
+        level = 1       # F8: Reset level
+        shake_timer = 0.0  # F4: Reset shake
+        shake_intensity = 0
+        particles = []     # F4: Reset particles
+        last_tick_time = pygame.time.get_ticks() / 1000.0  # F5: Init tick timer
+        game_over_processed = False
+        current_state = STATE_PLAYING
 
     # F8: Obstacle spawn helper
     def spawn_obstacles():
@@ -424,6 +447,8 @@ def main():
                         current_state = STATE_PLAYING
                 elif current_state == STATE_GAME_OVER:
                     if event.key == pygame.K_r:
+                        reset_game()
+                    elif event.key == pygame.K_m:
                         current_state = STATE_MODE_SELECT
                         game_over_processed = False
 
@@ -501,25 +526,7 @@ def main():
         elif current_state == STATE_START_SCREEN:
             start_button.update(mouse_pos)
             if start_button.is_clicked(mouse_pos, mouse_up or (keyboard_index == 0 and mouse_up)):
-                # Initialize Game
-                snake = Snake()
-                food = Food(snake.body)
-                bonus_food = BonusFood(snake.body)
-                bonus_food.active = False
-                power_up = PowerUp(snake.body, [food.position, bonus_food])
-                power_up.active = False
-                score = 0
-                score_since_last_bonus = 0
-                high_score = save_data["high_score"]
-                level_config = DIFFICULTY_LEVELS[selected_level]
-                fps = level_config["start_fps"]
-                obstacles = []  # F8: Reset obstacles
-                level = 1       # F8: Reset level
-                shake_timer = 0.0  # F4: Reset shake
-                shake_intensity = 0
-                particles = []     # F4: Reset particles
-                last_tick_time = pygame.time.get_ticks() / 1000.0  # F5: Init tick timer
-                current_state = STATE_PLAYING
+                reset_game()
 
         elif current_state == STATE_PLAYING:
             wrap_around = (selected_mode == MODE_WRAP_AROUND)
@@ -1068,12 +1075,15 @@ def main():
                     btn.update(mouse_pos)
                     btn.draw(screen)
                     if btn.is_clicked(mouse_pos, mouse_up or (i == keyboard_index and mouse_up)):
-                        if btn.text == "RESTART":
+                        if btn.text == "PLAY AGAIN":
+                            reset_game()
+                        elif btn.text == "MAIN MENU":
                             current_state = STATE_MODE_SELECT
                             game_over_processed = False
-                        elif btn.text == "QUIT TO MENU":
-                            current_state = STATE_MODE_SELECT
-                            game_over_processed = False
+                
+                # Guidance text
+                guide = font.render("Use Arrow keys & Enter or Mouse to choose", True, tm["snake_body"])
+                screen.blit(guide, (window_width // 2 - guide.get_width() // 2, window_height - 40))
 
         pygame.display.flip()
         
