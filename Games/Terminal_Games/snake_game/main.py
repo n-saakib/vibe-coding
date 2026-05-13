@@ -771,8 +771,8 @@ def main():
             screen.blit(sort_info, (window_width // 2 - sort_info.get_width() // 2, 100))
             screen.blit(page_info, (window_width // 2 - page_info.get_width() // 2, 130))
             
-            # Table Headers
-            cols = [("Rank", 0.1), ("Name", 0.35), ("Score", 0.65), ("Date", 0.85)]
+            # Table Headers (F13: Improved spacing)
+            cols = [("Rank", 0.08), ("Name", 0.28), ("Score", 0.55), ("Date", 0.82)]
             header_y = 180
             for label, pos_pct in cols:
                 txt = font.render(label, True, COLOR_SNAKE_BODY)
@@ -789,22 +789,26 @@ def main():
                 
                 # Rank
                 txt = font.render(str(i + 1), True, COLOR_TEXT)
-                screen.blit(txt, (offset_x + board_width * 0.1 - txt.get_width() // 2, row_y))
+                screen.blit(txt, (offset_x + board_width * 0.08 - txt.get_width() // 2, row_y))
                 
                 # Name
                 txt = font.render(entry["name"], True, COLOR_TEXT)
-                screen.blit(txt, (offset_x + board_width * 0.35 - txt.get_width() // 2, row_y))
+                screen.blit(txt, (offset_x + board_width * 0.28 - txt.get_width() // 2, row_y))
                 
                 # Score
                 txt = font.render(str(entry["score"]), True, COLOR_SNAKE_HEAD)
-                screen.blit(txt, (offset_x + board_width * 0.65 - txt.get_width() // 2, row_y))
+                screen.blit(txt, (offset_x + board_width * 0.55 - txt.get_width() // 2, row_y))
                 
                 # Date
                 txt = font.render(entry["date"], True, COLOR_TEXT)
-                screen.blit(txt, (offset_x + board_width * 0.85 - txt.get_width() // 2, row_y))
+                screen.blit(txt, (offset_x + board_width * 0.82 - txt.get_width() // 2, row_y))
             
             for btn in leaderboard_buttons:
                 btn.draw(screen)
+
+            # Guidance text
+            guide = font.render("Arrows to navigate, Enter to select", True, tm["snake_body"])
+            screen.blit(guide, (window_width // 2 - guide.get_width() // 2, window_height - 35))
 
         elif current_state == STATE_START_SCREEN:
             title = large_font.render("Ready?", True, COLOR_TEXT)
