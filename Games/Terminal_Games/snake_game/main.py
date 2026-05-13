@@ -71,15 +71,24 @@ class Button:
         self.hover_color = hover_color
         self.is_hovered = False
         self.is_selected = False # F13: Keyboard focus
+        self.is_active = False   # F13: Permanent selection state (radio buttons)
 
     def draw(self, screen):
-        color = self.hover_color if (self.is_hovered or self.is_selected) else self.color
+        # Determine color based on states
+        if self.is_active:
+            color = COLOR_SNAKE_HEAD
+        elif self.is_hovered or self.is_selected:
+            color = self.hover_color
+        else:
+            color = self.color
+
         pygame.draw.rect(screen, color, self.rect, border_radius=5)
         
-        # F13: Highlight selected button with a thicker/brighter border
-        border_color = COLOR_SNAKE_HEAD if self.is_selected else COLOR_TEXT
-        border_width = 4 if self.is_selected else 2
-        pygame.draw.rect(screen, border_color, self.rect, border_width, border_radius=5)
+        # F13: Highlight keyboard selected button
+        if self.is_selected:
+            pygame.draw.rect(screen, COLOR_TEXT, self.rect, 4, border_radius=5)
+        else:
+            pygame.draw.rect(screen, COLOR_TEXT, self.rect, 2, border_radius=5)
         
         text_surf = self.font.render(self.text, True, COLOR_TEXT)
         text_rect = text_surf.get_rect(center=self.rect.center)
@@ -133,7 +142,9 @@ def main():
     
     # F13: Leaderboard UI state
     leaderboard_page = 0
-    leaderboard_sort_mode = "Score" # Options: Score, Name, Date
+    leaderboard_sort_mode = "Rank" # Options: Rank, Name, Score, Date
+    leaderboard_sort_desc = False # Default: Ascending Rank
+    leaderboard_dropdown_open = False
     leaderboard_data = [] # Cached for current sort
 
     # Board pixel dimensions (SCREEN_WIDTH/HEIGHT renamed conceptually)
@@ -169,6 +180,7 @@ def main():
     theme_buttons = []  # F10
     game_over_buttons = [] # F13
     leaderboard_buttons = [] # F13
+    lb_dropdown_buttons = [] # F13
     pause_buttons = []
     start_button = None
     selected_theme = "Classic"  # F10
@@ -205,14 +217,26 @@ def main():
             Button(center_x, y_start + 140, btn_width, 50, "VIEW LEADERBOARD", font)
         ]
         
-        # F13: Leaderboard navigation buttons
-        lb_btn_w = 120
-        lb_y = window_height - 80
+        # F13: Leaderboard redesign
+        lb_menu_btn_w = 180
         leaderboard_buttons = [
-            Button(window_width // 2 - 250, lb_y, lb_btn_w, 40, "PREV", font),
-            Button(window_width // 2 - 120, lb_y, lb_btn_w, 40, "NEXT", font),
-            Button(window_width // 2 + 10, lb_y, lb_btn_w, 40, "SORT", font),
-            Button(window_width // 2 + 140, lb_y, lb_btn_w, 40, "BACK", font)
+            # Main Menu (Top Left)
+            Button(20, 20, lb_menu_btn_w, 40, "MAIN MENU", font),
+            # Sort By (Dropdown Trigger - Top Middle)
+            Button(window_width // 2 - 100, 80, 150, 40, "Sort By:", font),
+            # Asc/Desc (Joint Buttons)
+            Button(window_width // 2 + 60, 80, 120, 40, "Ascending", font),
+            Button(window_width // 2 + 180, 80, 120, 40, "Descending", font)
+        ]
+        
+        # Dropdown options (positioned below "Sort By:")
+        opt_w = 150
+        opt_h = 35
+        lb_dropdown_buttons = [
+            Button(window_width // 2 - 100, 120, opt_w, opt_h, "Rank", font),
+            Button(window_width // 2 - 100, 155, opt_w, opt_h, "Name", font),
+            Button(window_width // 2 - 100, 190, opt_w, opt_h, "Score", font),
+            Button(window_width // 2 - 100, 225, opt_w, opt_h, "Date", font)
         ]
 
         level_buttons = []
@@ -252,6 +276,8 @@ def main():
         elif current_state == STATE_NAME_INPUT:
             return []
         elif current_state == STATE_LEADERBOARD:
+            if leaderboard_dropdown_open:
+                return leaderboard_buttons + lb_dropdown_buttons
             return leaderboard_buttons
         elif current_state == STATE_START_SCREEN:
             return [start_button]
@@ -264,12 +290,22 @@ def main():
     # F13: Sort leaderboard based on mode
     def sort_leaderboard_data():
         nonlocal leaderboard_data
+        # First, ensure Rank is available (Rank 1 is the highest score in history)
+        # We always calculate Rank based on original score-desc sort.
+        original = load_leaderboard()
+        original.sort(key=lambda x: (x["score"], x["date"]), reverse=True)
+        for i, entry in enumerate(original):
+            entry["rank"] = i + 1
+        
+        # Now sort based on mode
         if leaderboard_sort_mode == "Score":
-            leaderboard_data.sort(key=lambda x: (x["score"], x["date"]), reverse=True)
+            leaderboard_data.sort(key=lambda x: (x["score"], x["date"]), reverse=not leaderboard_sort_desc)
         elif leaderboard_sort_mode == "Name":
-            leaderboard_data.sort(key=lambda x: x["name"].lower())
+            leaderboard_data.sort(key=lambda x: x["name"].lower(), reverse=leaderboard_sort_desc)
         elif leaderboard_sort_mode == "Date":
-            leaderboard_data.sort(key=lambda x: x["date"], reverse=True)
+            leaderboard_data.sort(key=lambda x: x["date"], reverse=not leaderboard_sort_desc)
+        elif leaderboard_sort_mode == "Rank":
+            leaderboard_data.sort(key=lambda x: x["rank"], reverse=leaderboard_sort_desc)
 
     # F4: Particle spawn helper
     def spawn_particles(screen_x, screen_y, color, count):
@@ -424,9 +460,25 @@ def main():
                     buttons = get_current_buttons()
                     if buttons:
                         if event.key == pygame.K_UP or event.key == pygame.K_LEFT:
-                            keyboard_index = (keyboard_index - 1) % len(buttons)
+                            # F13: Special handling for leaderboard page navigation if not in dropdown
+                            if current_state == STATE_LEADERBOARD and not leaderboard_dropdown_open:
+                                if event.key == pygame.K_LEFT:
+                                    if leaderboard_page > 0:
+                                        leaderboard_page -= 1
+                                else:
+                                    keyboard_index = (keyboard_index - 1) % len(buttons)
+                            else:
+                                keyboard_index = (keyboard_index - 1) % len(buttons)
                         elif event.key == pygame.K_DOWN or event.key == pygame.K_RIGHT:
-                            keyboard_index = (keyboard_index + 1) % len(buttons)
+                            # F13: Special handling for leaderboard page navigation if not in dropdown
+                            if current_state == STATE_LEADERBOARD and not leaderboard_dropdown_open:
+                                if event.key == pygame.K_RIGHT:
+                                    if (leaderboard_page + 1) * 10 < len(leaderboard_data):
+                                        leaderboard_page += 1
+                                else:
+                                    keyboard_index = (keyboard_index + 1) % len(buttons)
+                            else:
+                                keyboard_index = (keyboard_index + 1) % len(buttons)
                         elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
                             if keyboard_index >= 0:
                                 mouse_up = True # Simulate click for the selected button
@@ -475,24 +527,33 @@ def main():
                         current_state = STATE_LEVEL_SELECT
         
         elif current_state == STATE_LEADERBOARD:
+            # First handle dropdown if open
+            if leaderboard_dropdown_open:
+                for i, btn in enumerate(lb_dropdown_buttons):
+                    btn.update(mouse_pos)
+                    # Offset for keyboard index (they come after leaderboard_buttons)
+                    kb_idx = len(leaderboard_buttons) + i
+                    if btn.is_clicked(mouse_pos, mouse_up or (kb_idx == keyboard_index and mouse_up)):
+                        leaderboard_sort_mode = btn.text
+                        sort_leaderboard_data()
+                        leaderboard_dropdown_open = False
+                        keyboard_index = 1 # Back to "Sort By:" button
+            
+            # Standard leaderboard buttons
             for i, btn in enumerate(leaderboard_buttons):
                 btn.update(mouse_pos)
                 if btn.is_clicked(mouse_pos, mouse_up or (i == keyboard_index and mouse_up)):
-                    if btn.text == "BACK":
+                    if btn.text == "MAIN MENU":
                         current_state = STATE_MODE_SELECT
-                    elif btn.text == "NEXT":
-                        if (leaderboard_page + 1) * 10 < len(leaderboard_data):
-                            leaderboard_page += 1
-                    elif btn.text == "PREV":
-                        if leaderboard_page > 0:
-                            leaderboard_page -= 1
-                    elif btn.text == "SORT":
-                        # Cycle modes: Score -> Name -> Date -> Score
-                        modes = ["Score", "Name", "Date"]
-                        idx = (modes.index(leaderboard_sort_mode) + 1) % len(modes)
-                        leaderboard_sort_mode = modes[idx]
+                        leaderboard_dropdown_open = False
+                    elif btn.text == "Sort By:":
+                        leaderboard_dropdown_open = not leaderboard_dropdown_open
+                    elif btn.text == "Ascending":
+                        leaderboard_sort_desc = False
                         sort_leaderboard_data()
-                        leaderboard_page = 0
+                    elif btn.text == "Descending":
+                        leaderboard_sort_desc = True
+                        sort_leaderboard_data()
         
         elif current_state == STATE_LEVEL_SELECT:
             for i, btn in enumerate(level_buttons):
@@ -762,18 +823,29 @@ def main():
             screen.blit(prompt, (window_width // 2 - prompt.get_width() // 2, box_y + 100))
 
         elif current_state == STATE_LEADERBOARD:
+            # Update button active states
+            for btn in leaderboard_buttons:
+                if btn.text == "Ascending":
+                    btn.is_active = not leaderboard_sort_desc
+                elif btn.text == "Descending":
+                    btn.is_active = leaderboard_sort_desc
+                elif btn.text == "Sort By:":
+                    btn.text = f"Sort By: {leaderboard_sort_mode}"
+            
+            for btn in lb_dropdown_buttons:
+                btn.is_active = (btn.text == leaderboard_sort_mode)
+
+            # Draw leaderboard header
             title = large_font.render("Leaderboard", True, COLOR_TEXT)
-            screen.blit(title, (window_width // 2 - title.get_width() // 2, 40))
+            screen.blit(title, (window_width // 2 - title.get_width() // 2, 20))
             
-            # Header info
-            sort_info = font.render(f"Sorted by: {leaderboard_sort_mode}", True, COLOR_SNAKE_HEAD)
-            page_info = font.render(f"Page {leaderboard_page + 1}/{max(1, (len(leaderboard_data) + 9) // 10)}", True, COLOR_TEXT)
-            screen.blit(sort_info, (window_width // 2 - sort_info.get_width() // 2, 100))
-            screen.blit(page_info, (window_width // 2 - page_info.get_width() // 2, 130))
-            
+            # Draw standard buttons
+            for btn in leaderboard_buttons:
+                btn.draw(screen)
+
             # Table Headers (F13: Improved spacing)
-            cols = [("Rank", 0.08), ("Name", 0.28), ("Score", 0.55), ("Date", 0.82)]
-            header_y = 180
+            cols = [("Rank", 0.08), ("Name", 0.28), ("Score", 0.52), ("Date", 0.80)]
+            header_y = 150
             for label, pos_pct in cols:
                 txt = font.render(label, True, COLOR_SNAKE_BODY)
                 screen.blit(txt, (offset_x + board_width * pos_pct - txt.get_width() // 2, header_y))
@@ -788,7 +860,7 @@ def main():
                 row_y = header_y + 50 + (i - start_idx) * 40
                 
                 # Rank
-                txt = font.render(str(i + 1), True, COLOR_TEXT)
+                txt = font.render(str(entry.get("rank", i+1)), True, COLOR_TEXT)
                 screen.blit(txt, (offset_x + board_width * 0.08 - txt.get_width() // 2, row_y))
                 
                 # Name
@@ -797,18 +869,28 @@ def main():
                 
                 # Score
                 txt = font.render(str(entry["score"]), True, COLOR_SNAKE_HEAD)
-                screen.blit(txt, (offset_x + board_width * 0.55 - txt.get_width() // 2, row_y))
+                screen.blit(txt, (offset_x + board_width * 0.52 - txt.get_width() // 2, row_y))
                 
                 # Date
                 txt = font.render(entry["date"], True, COLOR_TEXT)
-                screen.blit(txt, (offset_x + board_width * 0.82 - txt.get_width() // 2, row_y))
+                screen.blit(txt, (offset_x + board_width * 0.80 - txt.get_width() // 2, row_y))
             
-            for btn in leaderboard_buttons:
-                btn.draw(screen)
+            # Draw page info
+            page_info = font.render(f"Page {leaderboard_page + 1}/{max(1, (len(leaderboard_data) + 9) // 10)}", True, COLOR_TEXT)
+            screen.blit(page_info, (window_width // 2 - page_info.get_width() // 2, window_height - 70))
 
             # Guidance text
-            guide = font.render("Arrows to navigate, Enter to select", True, tm["snake_body"])
+            guide = font.render("Use Arrows to navigate among pages", True, tm["snake_body"])
             screen.blit(guide, (window_width // 2 - guide.get_width() // 2, window_height - 35))
+            
+            # Draw dropdown last (on top)
+            if leaderboard_dropdown_open:
+                # Draw a small background for dropdown
+                dd_rect = pygame.Rect(lb_dropdown_buttons[0].rect.left, lb_dropdown_buttons[0].rect.top,
+                                     lb_dropdown_buttons[0].rect.width, len(lb_dropdown_buttons) * 35)
+                pygame.draw.rect(screen, COLOR_BACKGROUND, dd_rect)
+                for btn in lb_dropdown_buttons:
+                    btn.draw(screen)
 
         elif current_state == STATE_START_SCREEN:
             title = large_font.render("Ready?", True, COLOR_TEXT)
