@@ -258,7 +258,7 @@ def main():
         
         # F13: Add game over buttons
         game_over_buttons = [
-            Button(center_x, window_height // 2 + 20, btn_width, 50, "PLAY AGAIN", font),
+            Button(center_x, window_height // 2 + 20, btn_width, 50, "RESTART", font),
             Button(center_x, window_height // 2 + 90, btn_width, 50, "MAIN MENU", font)
         ]
 
@@ -1161,14 +1161,14 @@ def main():
                     btn.update(mouse_pos)
                     btn.draw(screen)
                     if btn.is_clicked(mouse_pos, mouse_up or (i == keyboard_index and mouse_up)):
-                        if btn.text == "PLAY AGAIN":
+                        if btn.text == "RESTART":
                             reset_game()
                         elif btn.text == "MAIN MENU":
                             current_state = STATE_MODE_SELECT
                             game_over_processed = False
                 
                 # Guidance text
-                guide = font.render("Use Arrow keys & Enter or Mouse to choose", True, tm["snake_body"])
+                guide = font.render("Press R to Restart or Use Arrows/Mouse", True, tm["snake_body"])
                 screen.blit(guide, (window_width // 2 - guide.get_width() // 2, window_height - 40))
 
         pygame.display.flip()
