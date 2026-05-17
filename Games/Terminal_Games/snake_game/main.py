@@ -188,6 +188,7 @@ def main():
     def update_layout():
         nonlocal window_width, window_height, board_width, board_height, offset_x, offset_y
         nonlocal mode_buttons, level_buttons, theme_buttons, pause_buttons, start_button
+        nonlocal game_over_buttons, leaderboard_buttons, lb_dropdown_buttons # F13: Fix scoping
 
         # 1. Update board dimensions from selected size
         dim = SCREEN_SIZES.get(selected_size_name, 600)
