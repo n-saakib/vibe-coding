@@ -2,7 +2,7 @@
 
 This repository contains various games developed during vibe coding sessions.
 
-| Project | Branch |
-| --- | --- |
-| Snake Game | [games/terminal-games/snake](https://github.com/n-saakib/vibe-coding/tree/games/terminal-games/snake) |
-| Tic-Tac-Toe | [games/terminal-games/tic-tac-toe](https://github.com/n-saakib/vibe-coding/tree/games/terminal-games/tic-tac-toe) |
+| Project | Path |
+| :--- | :--- |
+| Snake Game | [Games/Terminal_Games/snake_game](Games/Terminal_Games/snake_game) |
+| Tic-Tac-Toe | [Games/Terminal_Games/tic-tac-toe](Games/Terminal_Games/tic-tac-toe) |
